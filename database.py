@@ -1,0 +1,176 @@
+from PyQt5.QtSql import QSqlDatabase, QSqlQuery
+
+class Database():
+    def __init__(self):
+        self.db = QSqlDatabase.addDatabase("QSQLITE")
+        self.db.setDatabaseName("database")
+
+    def __enter__(self):
+        self.db.open()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.db.close()
+
+    def createTable(self):
+        createTableQuery = QSqlQuery()
+        createTableQuery.exec(
+            """
+            CREATE TABLE objects (
+                objectID INTEGER PRIMARY KEY UNIQUE NOT NULL,
+                className TEXT NOT NULL,
+                confidenceLevel REAL NOT NULL,
+                recyclableBool INTEGER NOT NULL,
+                dateTime TEXT NOT NULL
+            )
+            """
+        )
+
+    def insertObject(self, objectID, className, confidenceLevel, recyclableBool, dateTime):
+        query = QSqlQuery()
+        query.prepare(
+            "INSERT INTO objects (objectID, className, confidenceLevel, recyclableBool, dateTime)"
+            "VALUES (?, ?, ?, ?, ?)"
+        )
+        query.addBindValue(objectID)
+        query.addBindValue(className)
+        query.addBindValue(confidenceLevel)
+        query.addBindValue(recyclableBool)
+        query.addBindValue(dateTime)
+
+        #Parameterization - to prevent SQL injection vulnerabilities
+        if not query.exec_():
+            print(f"Error inserting object: {query.lastError().text()}")
+        
+
+    def selectAll(self):
+        query = QSqlQuery()
+        query.exec(
+        """
+        SELECT * FROM objects
+        """
+        )
+
+        while query.next():
+            print(query.value("objectID"), query.value("className"), query.value("confidenceLevel"), query.value("recyclableBool"), query.value("dateTime"))
+
+    def truncateTable(self):
+        self.db.open()
+
+        query = QSqlQuery()
+        query.exec(
+            """
+            DELETE FROM objects
+            """
+        )
+
+        if not query.isActive():
+            print(f"Error truncating table: {query.lastError().text()}")
+
+    def selectMaxID(self):
+        query = QSqlQuery()
+        query.exec(
+        """
+        SELECT MAX(objectID) FROM objects
+        """
+        )
+
+        if query.next():
+            max_id = query.value(0)
+
+        return max_id
+    
+    def updateDateEdits(self):  # Add 'self' as the method belongs to a class
+        query = QSqlQuery()
+        # Retrieve the earliest and latest dates
+        query.exec(
+        """
+        SELECT MIN(dateTime), MAX(dateTime) FROM objects
+        """
+        )
+
+        # Fetch results and return
+        query.next()  # Move to first row
+        earliest_date_str = query.value(0)
+        latest_date_str = query.value(1)
+
+        return earliest_date_str, latest_date_str 
+
+    def count_rows_by_date_range(self, from_date, to_date):
+        query = QSqlQuery()
+        query.prepare(
+        """
+        SELECT COUNT(*) FROM objects WHERE dateTime BETWEEN :from_date AND :to_date
+        """)
+        query.bindValue(":from_date", from_date)
+        query.bindValue(":to_date", to_date)
+        query.exec()
+        query.next()
+
+        return query.value(0)
+    
+    def average_daily_detected_litter(self, from_date, to_date):
+        query = QSqlQuery()
+        query.prepare("SELECT SUM(count) as total_count, COUNT(DISTINCT DATE(dateTime)) as num_days FROM (SELECT COUNT(*) as count, DATE(dateTime) as date FROM objects WHERE dateTime BETWEEN :from_date AND :to_date GROUP BY date)")
+        query.bindValue(":from_date", from_date)
+        query.bindValue(":to_date", to_date)
+        query.exec()
+        query.next() 
+
+        total_count = query.value(0)
+        num_days = query.value(1)
+
+        if num_days > 0:
+            return total_count / num_days
+        else:
+            return None  # Or handle the case of no data in the range
+        
+    def litter_composition(self, from_date, to_date):
+        query = QSqlQuery()
+        query.prepare("""
+            SELECT 
+                SUM(CASE WHEN recyclableBool = 1 THEN 1 ELSE 0 END) as recyclable_count,
+                SUM(CASE WHEN recyclableBool = 0 THEN 1 ELSE 0 END) as non_recyclable_count,
+                COUNT(*) as total_count 
+            FROM objects 
+            WHERE dateTime BETWEEN :from_date AND :to_date
+        """)
+        query.bindValue(":from_date", from_date)
+        query.bindValue(":to_date", to_date)
+        query.exec()
+        query.next() 
+
+        recyclable_count = query.value(0)
+        non_recyclable_count = query.value(1)
+        total_count = query.value(2)
+
+        if total_count > 0:
+            return {
+                "recyclable_percentage": (recyclable_count / total_count) * 100,
+                "non_recyclable_percentage": (non_recyclable_count / total_count) * 100
+            }
+        else:
+            return None  # Or handle the case of no data in the range
+
+    def litter_summary(self, from_date, to_date, recyclable):
+        query = QSqlQuery()
+        query.prepare("""
+            SELECT className, COUNT(*) as count 
+            FROM objects 
+            WHERE recyclableBool = :recyclable AND dateTime BETWEEN :from_date AND :to_date
+            GROUP BY className
+        """)
+        query.bindValue(":from_date", from_date)
+        query.bindValue(":to_date", to_date)
+        query.bindValue(":recyclable", 1 if recyclable else 0)  # Bind 1 for recyclable, 0 otherwise
+        query.exec()
+    
+        litter_summary = []
+        while query.next():
+            className = query.value(0)
+            count = query.value(1)
+            litter_summary.append({"className": className, "count": count})
+
+        return litter_summary 
+
+
