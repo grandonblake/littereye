@@ -1,4 +1,4 @@
-from PyQt5.QtSql import QSqlDatabase, QSqlQuery
+from PySide6.QtSql import QSqlDatabase, QSqlQuery
 
 class Database():
     def __init__(self):
@@ -42,7 +42,6 @@ class Database():
         if not query.exec_():
             print(f"Error inserting object: {query.lastError().text()}")
         
-
     def selectAll(self):
         query = QSqlQuery()
         query.exec(

@@ -19,8 +19,6 @@ from ui import Ui_MainWindow, Ui_Dialog, settingsDialogBox
 
 from database import Database
 
-from PyQt5.QtCore import pyqtSignal
-
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
@@ -88,27 +86,12 @@ class VideoWorker(QObject):
                             else: #recyclable
                                 recyclableBool = 1
 
-                            print("SELF.MAXID: ", self.maxID)
-
                             maxID = self.maxID + object_id
-
-                            print("AAAAAAAAAAAAAAAAAAAAAAAAA")
 
                             with Database() as database:
                                 database.insertObject(objectID=maxID, className=object_name, confidenceLevel=object_conf, recyclableBool=recyclableBool, dateTime=formattedDateTimeNow)
-                                print("BBBBBBBBBBBBBBBBBBBBBBB")
-                                print("OBJECT_ID: ", object_id)
-                                print("MAX ID: ", maxID)
-                                print("CLASS_INDEX: ", class_index)
-                                print("OBJECT_CONF: ", object_conf)
-                                print("OBJECT_NAME: ", object_name)
-                                print("RECYCLABLEBOOL: ", recyclableBool)
 
                                 database.selectAll()
-
-                        # Print the detected objects with their IDs and confidence scores
-                        for object_id, (object_name, object_conf) in detected_objects.items():
-                            print(f"ID: {object_id}, Object: {object_name}, Confidence: {object_conf}")
 
                 # Emit the detected objects list, even if it's empty
                 self.objectListUpdated.emit(list(detected_objects.values()))
@@ -187,7 +170,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.models = self.getAvailableModels()  # list of models
         self.availableCameras = self.getAvailableCameras() #list of cameras
         self.maxID = self.maxIDFromDatabase()
-
+        
         self.StartRecordButton.clicked.connect(self.toggle_recording)  # Connect the button
         
         # Add available cameras to the CameraSourceComboBox
@@ -321,7 +304,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.toDateEdit.setDate(latest_date)
                 self.toDateEdit.setMaximumDate(latest_date)
                 self.toDateEdit.setMinimumDate(earliest_date)
-
 
     def clickedFilterButton(self):
         with Database() as database:
