@@ -1,26 +1,15 @@
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGridLayout,
-    QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
-    QMainWindow, QMenuBar, QPushButton, QSizePolicy, QAbstractSpinBox, QDateEdit,
-    QStatusBar, QVBoxLayout, QWidget, QDialog, QLayout, QSlider, QDialogButtonBox, QTabWidget)
+from PySide6.QtCore import (QDate, QObject, Qt)
+from PySide6.QtGui import (QImage, QPixmap)
+from PySide6.QtWidgets import (QMainWindow, QDialog)
 
 from PySide6 import QtWidgets
+
 from PySide6.QtCore import Signal, QThread
 from ultralytics import YOLO
 import os, sys, datetime, time, cv2
 
 from ui import Ui_MainWindow, Ui_settingsDialog, Ui_setAlertDialog
-
 from database import Database
-
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 
 class VideoWorker(QObject):
     imageUpdated = Signal(QImage)
@@ -37,6 +26,8 @@ class VideoWorker(QObject):
         self.recording_out = None  # Video writer object
         self.maxID = maxID
         self.fps = 0.0
+
+        self.names = {}
 
     def run(self):
         global start_time, frames
@@ -59,7 +50,7 @@ class VideoWorker(QObject):
                     ids = result.boxes.id
                     conf = result.boxes.conf
 
-                    print("NAMES: ", names)
+                    self.names = result.names
 
                     # Check if ids and classes are not None
                     if ids is not None and classes is not None:
@@ -161,6 +152,10 @@ class VideoWorker(QObject):
             self.recording_out.release()
             self.recording_out = None
 
+    def open_alert_dialog(self):
+        setAlert = setAlertDialog(self.parent(), self.names)
+        setAlert.exec()
+
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -194,6 +189,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.updateDateEdits()
 
         self.runInference()
+
+    def onSetAlertClicked(self):
+        self.worker.open_alert_dialog()
 
     def getAvailableCameras(self):
         available_cameras = []
@@ -271,10 +269,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.iou = advancedSettings.iou
             self.model_index = advancedSettings.AIModelComboBox.currentIndex()
             self.runInference()
-
-    def onSetAlertClicked(self):
-        setAlert = setAlertDialog(self)
-        setAlert.exec()
 
     def updateModel(self, model_index):
         self.model_index = model_index
@@ -408,9 +402,15 @@ class settingsDialog(Ui_settingsDialog, QDialog):
         self.modelChanged.emit(self.AIModelComboBox.currentIndex())
 
 class setAlertDialog(Ui_setAlertDialog, QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, names=None):
         super().__init__(parent)
         self.setupUi(self)
+
+        self.names = names if names is not None else {}
+
+        # Populate the comboBox with the values from the names dictionary
+        for name in self.names.values():
+            self.comboBox.addItem(name)
 
 app = QtWidgets.QApplication(sys.argv)
 

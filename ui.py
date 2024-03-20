@@ -1,14 +1,7 @@
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGridLayout,
-    QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
-    QMainWindow, QMenuBar, QPushButton, QSizePolicy, QAbstractSpinBox, QDateEdit, QSpacerItem, QScrollArea,
-    QStatusBar, QVBoxLayout, QWidget, QDialog, QLayout, QSlider, QDialogButtonBox, QTabWidget, QListView, QLineEdit)
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect, QSize, Qt)
+from PySide6.QtGui import (QBrush, QColor, QFont, QPalette)
+from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSizePolicy, QAbstractSpinBox, QDateEdit, QScrollArea,
+    QStatusBar, QVBoxLayout, QWidget, QLayout, QSlider, QDialogButtonBox, QTabWidget, QListView, QLineEdit)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -49,9 +42,7 @@ class Ui_MainWindow(object):
 
         self.gridLayout_2.addWidget(self.VideoWidget, 0, 2, 1, 1)
 
-
         self.leftLayout.addWidget(self.topLeftFrame)
-
 
         self.wholeWindowLayout.addLayout(self.leftLayout)
 
@@ -79,7 +70,6 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addWidget(self.LitterEyeTitle)
 
-
         self.verticalLayout_2.addWidget(self.rightFirstFrame)
 
         self.rightSecondFrame = QFrame(self.rightFrame)
@@ -105,7 +95,6 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addWidget(self.totalObjectsDetectedNumber)
 
-
         self.verticalLayout_2.addWidget(self.rightSecondFrame)
 
         self.rightThirdFrame = QFrame(self.rightFrame)
@@ -125,7 +114,6 @@ class Ui_MainWindow(object):
         self.listWidget.setObjectName(u"listWidget")
 
         self.verticalLayout_4.addWidget(self.listWidget)
-
 
         self.verticalLayout_2.addWidget(self.rightThirdFrame)
 
@@ -539,7 +527,6 @@ class Ui_MainWindow(object):
 
 
         QMetaObject.connectSlotsByName(MainWindow)
-    # setupUi
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
@@ -572,7 +559,6 @@ class Ui_MainWindow(object):
         self.barChart.setText(QCoreApplication.translate("MainWindow", u"Amount of Total Detected Litter per class (Bar chart)", None))
         self.pieChart.setText(QCoreApplication.translate("MainWindow", u"Percentage Distribution of Total Detected Litter per class (Pie chart)", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.reportTab), QCoreApplication.translate("MainWindow", u"Report", None))
-    # retranslateUi
 
 class Ui_settingsDialog(object):
     def setupUi(self, Dialog):
@@ -755,8 +741,7 @@ class Ui_settingsDialog(object):
         self.buttonBox.rejected.connect(Dialog.reject)
 
         QMetaObject.connectSlotsByName(Dialog)
-    # setupUi
-
+    
     def retranslateUi(self, Dialog):
         Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Dialog", None))
         self.AIModelLabel.setText(QCoreApplication.translate("Dialog", u"AI Model", None))
@@ -764,8 +749,7 @@ class Ui_settingsDialog(object):
         self.ConfidenceThresholdNumber.setText(QCoreApplication.translate("Dialog", u"0", None))
         self.IoUThresholdLabel.setText(QCoreApplication.translate("Dialog", u"IoU Threshold", None))
         self.IoUThresholdNumber.setText(QCoreApplication.translate("Dialog", u"0", None))
-    # retranslateUi
-
+    
 class Ui_setAlertDialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():
@@ -877,8 +861,7 @@ class Ui_setAlertDialog(object):
         self.pushButton.clicked.connect(self.add_row)
 
         QMetaObject.connectSlotsByName(Dialog)
-    # setupUi
-
+    
     def retranslateUi(self, Dialog):
         Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Dialog", None))
         self.label.setText(QCoreApplication.translate("Dialog", u"Class", None))
@@ -887,8 +870,7 @@ class Ui_setAlertDialog(object):
         self.label_3.setText(QCoreApplication.translate("Dialog", u"Plastic bottle", None))
         self.label_4.setText(QCoreApplication.translate("Dialog", u"5", None))
         self.pushButton_2.setText(QCoreApplication.translate("Dialog", u"Remove", None))
-    # retranslateUi
-
+    
     def add_row(self):
         item_name = self.comboBox.currentText()  
         amount = self.lineEdit.text()         
@@ -919,7 +901,3 @@ class Ui_setAlertDialog(object):
 
             self.verticalLayout_2.addLayout(new_horizontal_layout)
             self.lineEdit.clear()
-
-
-
-
