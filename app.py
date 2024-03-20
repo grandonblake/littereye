@@ -59,6 +59,8 @@ class VideoWorker(QObject):
                     ids = result.boxes.id
                     conf = result.boxes.conf
 
+                    print("NAMES: ", names)
+
                     # Check if ids and classes are not None
                     if ids is not None and classes is not None:
                         # Convert the tensors to lists
@@ -91,7 +93,7 @@ class VideoWorker(QObject):
                             with Database() as database:
                                 database.insertObject(objectID=maxID, className=object_name, confidenceLevel=object_conf, recyclableBool=recyclableBool, dateTime=formattedDateTimeNow)
 
-                                database.selectAll()
+                                # database.selectAll()
 
                 # Emit the detected objects list, even if it's empty
                 self.objectListUpdated.emit(list(detected_objects.values()))
