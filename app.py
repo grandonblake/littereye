@@ -15,7 +15,7 @@ from PySide6.QtCore import Signal, QThread
 from ultralytics import YOLO
 import os, sys, datetime, time, cv2
 
-from ui import Ui_MainWindow, Ui_Dialog, settingsDialogBox
+from ui import Ui_MainWindow, Ui_settingsDialog, Ui_setAlertDialog
 
 from database import Database
 
@@ -185,6 +185,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.advancedSettingsButton.clicked.connect(self.onAdvancedSettingsClicked)
 
+        self.SetAlertButton.clicked.connect(self.onSetAlertClicked)
+
         self.filterButton.clicked.connect(self.clickedFilterButton)
 
         self.updateDateEdits()
@@ -267,6 +269,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.iou = advancedSettings.iou
             self.model_index = advancedSettings.AIModelComboBox.currentIndex()
             self.runInference()
+
+    def onSetAlertClicked(self):
+        setAlert = setAlertDialog(self)
+        setAlert.exec()
 
     def updateModel(self, model_index):
         self.model_index = model_index
@@ -351,7 +357,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.video_capture.release()
         event.accept()
 
-class settingsDialog(Ui_Dialog, QDialog):
+class settingsDialog(Ui_settingsDialog, QDialog):
     modelChanged = Signal(int)
     def __init__(self, parent=None, models=None, model_index=0, conf=0.40, iou=0.50):
         super().__init__(parent)
@@ -398,6 +404,11 @@ class settingsDialog(Ui_Dialog, QDialog):
 
     def updateModel(self):
         self.modelChanged.emit(self.AIModelComboBox.currentIndex())
+
+class setAlertDialog(Ui_setAlertDialog, QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setupUi(self)
 
 app = QtWidgets.QApplication(sys.argv)
 
