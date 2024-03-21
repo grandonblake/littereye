@@ -11,6 +11,11 @@ import os, sys, datetime, time, cv2
 from ui import Ui_MainWindow, Ui_settingsDialog, Ui_setAlertDialog
 from database import Database
 
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
+
 class VideoWorker(QObject):
     imageUpdated = Signal(QImage)
     errorOccurred = Signal(str)
@@ -190,9 +195,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.runInference()
 
-    def onSetAlertClicked(self):
-        self.worker.open_alert_dialog()
-
     def getAvailableCameras(self):
         available_cameras = []
         i = 0
@@ -270,6 +272,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.model_index = advancedSettings.AIModelComboBox.currentIndex()
             self.runInference()
 
+    def onSetAlertClicked(self):
+        self.worker.open_alert_dialog()
+
     def updateModel(self, model_index):
         self.model_index = model_index
 
@@ -343,15 +348,37 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 display_text = f"{item['className']} - {item['count']}"
                 self.nonRecyclableLitterListWidget.addItem(display_text)
 
+            litter_data_per_day = database.detected_litter_per_day(from_date, to_date)
+
+            # Process the data for the chart
+            dates = [item['date'] for item in litter_data_per_day]
+            counts = [int(item['count']) for item in litter_data_per_day]
+
+            # Create the Matplotlib figure and axes
+            fig = Figure()
+            ax = fig.add_subplot(111)  
+
+            # Create the line chart
+            ax.plot(dates, counts)
+
+            # Customize the chart
+            ax.set_xlabel('Date')
+            ax.set_ylabel('Detected Litter Count')
+            ax.set_title('Detected Litter per Day')
+
+            # Create a canvas widget to embed the chart
+            canvas = FigureCanvas(fig)
+
+            # Clear previous content (if any) in the frame
+            for i in reversed(range(self.gridLayout_4.count())):
+                self.gridLayout_4.itemAt(i).widget().setParent(None)
+
+            # Add the chart canvas to the frame's layout
+            self.gridLayout_4.addWidget(canvas, 0, 0)  # Assuming you want to place it at the top
+            canvas.draw()  # Draw the chart on the canvas
+
     def handle_error(self, message):
         print(f"Error occurred: {message}")
-
-    def closeEvent(self, event):
-        self.worker.imageUpdated.disconnect()
-        self.worker.errorOccurred.disconnect()
-        self.thread.quit()
-        self.video_capture.release()
-        event.accept()
 
 class settingsDialog(Ui_settingsDialog, QDialog):
     modelChanged = Signal(int)

@@ -172,4 +172,20 @@ class Database():
 
         return litter_summary 
 
+    def detected_litter_per_day(self, from_date, to_date):
+        query = QSqlQuery()
+        query.prepare("SELECT dateTime, COUNT(*) as count FROM objects WHERE dateTime BETWEEN :from_date AND :to_date GROUP BY substr(dateTime, 1, 10)")
+        query.bindValue(":from_date", from_date)
+        query.bindValue(":to_date", to_date)
+        query.exec()
+
+        result = []
+        while query.next():
+            date_time = query.value(0)
+            count = query.value(1)
+            date = date_time.split(" ")[0]  # Extract the date part from the dateTime string
+            result.append({'date': date, 'count': str(count)})
+
+        return result
+
 

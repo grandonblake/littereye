@@ -456,11 +456,6 @@ class Ui_MainWindow(object):
         self.centerRightFrame.setFrameShadow(QFrame.Sunken)
         self.gridLayout_4 = QGridLayout(self.centerRightFrame)
         self.gridLayout_4.setObjectName(u"gridLayout_4")
-        self.lineChart = QLabel(self.centerRightFrame)
-        self.lineChart.setObjectName(u"lineChart")
-
-        self.gridLayout_4.addWidget(self.lineChart, 0, 0, 1, 1)
-
 
         self.horizontalLayout.addWidget(self.centerRightFrame)
 
@@ -555,7 +550,6 @@ class Ui_MainWindow(object):
         self.totalNonRecyclableLitterLabel.setText(QCoreApplication.translate("MainWindow", u"0", None))
         self.label_9.setText(QCoreApplication.translate("MainWindow", u"Recyclable Litter", None))
         self.label_10.setText(QCoreApplication.translate("MainWindow", u"Non-Recyclable Litter", None))
-        self.lineChart.setText(QCoreApplication.translate("MainWindow", u"Line Chart showing total detected litter per day on a span of a date", None))
         self.barChart.setText(QCoreApplication.translate("MainWindow", u"Amount of Total Detected Litter per class (Bar chart)", None))
         self.pieChart.setText(QCoreApplication.translate("MainWindow", u"Percentage Distribution of Total Detected Litter per class (Pie chart)", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.reportTab), QCoreApplication.translate("MainWindow", u"Report", None))
