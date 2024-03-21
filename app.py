@@ -11,10 +11,9 @@ import os, sys, datetime, time, cv2
 from ui import Ui_MainWindow, Ui_settingsDialog, Ui_setAlertDialog
 from database import Database
 
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-
+from  matplotlib import rcParams
 
 class VideoWorker(QObject):
     imageUpdated = Signal(QImage)
@@ -349,33 +348,124 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.nonRecyclableLitterListWidget.addItem(display_text)
 
             litter_data_per_day = database.detected_litter_per_day(from_date, to_date)
+            self.createLineChart(litter_data_per_day)
 
-            # Process the data for the chart
-            dates = [item['date'] for item in litter_data_per_day]
-            counts = [int(item['count']) for item in litter_data_per_day]
+            count_per_class = database.count_class_names(from_date, to_date)
+            self.createBarChart(count_per_class)
 
-            # Create the Matplotlib figure and axes
-            fig = Figure()
-            ax = fig.add_subplot(111)  
+            percentage_per_class = database.get_class_percentages(from_date, to_date)
+            self.createPieChart(percentage_per_class)
 
-            # Create the line chart
-            ax.plot(dates, counts)
+    def createLineChart(self, litter_data_per_day):
+        # Process the data for the chart
+        dates = [item['date'] for item in litter_data_per_day]
+        counts = [int(item['count']) for item in litter_data_per_day]
 
-            # Customize the chart
-            ax.set_xlabel('Date')
-            ax.set_ylabel('Detected Litter Count')
-            ax.set_title('Detected Litter per Day')
+        # Create the Matplotlib figure and axes
+        fig = Figure()
+        ax = fig.add_subplot(111)  
 
-            # Create a canvas widget to embed the chart
-            canvas = FigureCanvas(fig)
+        # Create the line chart
+        ax.plot(dates, counts)
 
-            # Clear previous content (if any) in the frame
-            for i in reversed(range(self.gridLayout_4.count())):
-                self.gridLayout_4.itemAt(i).widget().setParent(None)
+        # Customize the chart
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Detected Litter Count')
+        ax.set_title('Detected Litter per Day')
 
-            # Add the chart canvas to the frame's layout
-            self.gridLayout_4.addWidget(canvas, 0, 0)  # Assuming you want to place it at the top
-            canvas.draw()  # Draw the chart on the canvas
+        # Adjust font size based on figure size
+        rcParams.update({'font.size': max(10, min(fig.get_size_inches()))})
+
+        # Adjust layout to fit the frame
+        fig.tight_layout()
+
+        # Create a canvas widget to embed the chart
+        canvas = FigureCanvas(fig)
+
+        # Clear previous content (if any) in the frame
+        for i in reversed(range(self.lineChartGridLayout.count())):
+            self.lineChartGridLayout.itemAt(i).widget().setParent(None)
+
+        # Add the chart canvas to the frame's layout
+        self.lineChartGridLayout.addWidget(canvas)  # Assuming you want to place it at the top
+        canvas.draw()  # Draw the chart on the canvas
+
+    def createBarChart(self, count_per_class):
+        # Process the data for the chart
+        class_names = [list(item.keys())[0] for item in count_per_class]
+        counts = [int(list(item.values())[0]) for item in count_per_class]
+
+        # Create the Matplotlib figure and axes
+        fig = Figure()
+        ax = fig.add_subplot(111)  
+
+        # Create the bar chart
+        ax.bar(class_names, counts)
+
+        # Customize the chart
+        ax.set_xlabel('Class Name')
+        ax.set_ylabel('Count')
+        ax.set_title('Count per Class')
+        ax.set_xticklabels(class_names, rotation=45)
+
+        # Adjust font size based on figure size
+        rcParams.update({'font.size': max(10, min(fig.get_size_inches()))})
+
+        # Adjust layout to fit the frame
+        fig.tight_layout()
+
+        # Create a canvas widget to embed the chart
+        canvas = FigureCanvas(fig)
+
+        # Clear previous content (if any) in the frame
+        for i in reversed(range(self.barChartGridLayout.count())):
+            self.barChartGridLayout.itemAt(i).widget().setParent(None)
+
+        # Add the chart canvas to the frame's layout
+        self.barChartGridLayout.addWidget(canvas)  # Assuming you want to place it at the top
+        canvas.draw()  # Draw the chart on the canvas
+
+    def createPieChart(self, percentage_per_class):
+        # Process the data for the chart
+        class_names = [list(item.keys())[0] for item in percentage_per_class]
+        percentages = [float(list(item.values())[0].replace('%', '')) for item in percentage_per_class]
+
+        # Create the Matplotlib figure and axes
+        fig = Figure()
+        ax = fig.add_subplot(111)  
+
+        def label_function(val):
+            return '' if val < 3 else f'{val:.1f}%'  # Omits labels for small percentages
+
+        # Create the pie chart
+        explode = [0.1]*len(class_names)  # Create a list of the same length as class_names, all values are 0.1
+        wedges, texts, autotexts = ax.pie(percentages, autopct=label_function, explode=explode)
+
+        # Create the legend labels with percentages
+        legend_labels = [f'{name}: {percentage}%' for name, percentage in zip(class_names, percentages)]
+
+        # Create the legend
+        ax.legend(wedges, legend_labels, title="Class Names", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
+
+        # Customize the chart
+        ax.set_title('Percentage per Class')
+
+        # Adjust font size based on figure size
+        rcParams.update({'font.size': max(10, min(fig.get_size_inches()))})
+
+        # Adjust layout to fit the frame
+        fig.tight_layout()
+
+        # Create a canvas widget to embed the chart
+        canvas = FigureCanvas(fig)
+
+        # Clear previous content (if any) in the frame
+        for i in reversed(range(self.pieChartGridLayout.count())):
+            self.pieChartGridLayout.itemAt(i).widget().setParent(None)
+
+        # Add the chart canvas to the frame's layout
+        self.pieChartGridLayout.addWidget(canvas)  # Assuming you want to place it at the top
+        canvas.draw()  # Draw the chart on the canvas
 
     def handle_error(self, message):
         print(f"Error occurred: {message}")

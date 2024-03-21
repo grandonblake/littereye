@@ -184,8 +184,47 @@ class Database():
             date_time = query.value(0)
             count = query.value(1)
             date = date_time.split(" ")[0]  # Extract the date part from the dateTime string
+            date = "-".join(date.split("-")[:2])  # Omit the year
             result.append({'date': date, 'count': str(count)})
 
         return result
+    
+    def count_class_names(self, from_date, to_date):
+        query = QSqlQuery()
+        query.prepare("SELECT className, COUNT(*) as count FROM objects WHERE dateTime BETWEEN :from_date AND :to_date GROUP BY className")
+        query.bindValue(":from_date", from_date)
+        query.bindValue(":to_date", to_date)
+        query.exec()
+
+        result = []
+        while query.next():
+            class_name = query.value(0)
+            count = query.value(1)
+            result.append({class_name: str(count)})
+
+        return result
+    
+    def get_class_percentages(self, from_date, to_date):
+        # First, get the total count of objects within the date range
+        total_count = self.count_rows_by_date_range(from_date, to_date)
+
+        query = QSqlQuery()
+        query.prepare("SELECT className, COUNT(*) as count FROM objects WHERE dateTime BETWEEN :from_date AND :to_date GROUP BY className")
+        query.bindValue(":from_date", from_date)
+        query.bindValue(":to_date", to_date)
+        query.exec()
+
+        result = []
+        while query.next():
+            class_name = query.value(0)
+            count = query.value(1)
+            # Calculate the percentage and round it to 2 decimal places
+            percentage = round((count / total_count) * 100, 2)
+            result.append({class_name: str(percentage) + '%'})
+
+        return result
+
+
+
 
 

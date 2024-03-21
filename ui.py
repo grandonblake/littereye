@@ -42,7 +42,9 @@ class Ui_MainWindow(object):
 
         self.gridLayout_2.addWidget(self.VideoWidget, 0, 2, 1, 1)
 
+
         self.leftLayout.addWidget(self.topLeftFrame)
+
 
         self.wholeWindowLayout.addLayout(self.leftLayout)
 
@@ -70,6 +72,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addWidget(self.LitterEyeTitle)
 
+
         self.verticalLayout_2.addWidget(self.rightFirstFrame)
 
         self.rightSecondFrame = QFrame(self.rightFrame)
@@ -95,6 +98,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addWidget(self.totalObjectsDetectedNumber)
 
+
         self.verticalLayout_2.addWidget(self.rightSecondFrame)
 
         self.rightThirdFrame = QFrame(self.rightFrame)
@@ -114,6 +118,7 @@ class Ui_MainWindow(object):
         self.listWidget.setObjectName(u"listWidget")
 
         self.verticalLayout_4.addWidget(self.listWidget)
+
 
         self.verticalLayout_2.addWidget(self.rightThirdFrame)
 
@@ -309,17 +314,20 @@ class Ui_MainWindow(object):
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
         self.label = QLabel(self.centerLeftFrame)
         self.label.setObjectName(u"label")
-        self.label.setFont(font1)
+        font6 = QFont()
+        font6.setPointSize(11)
+        font6.setBold(True)
+        self.label.setFont(font6)
         self.label.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_8.addWidget(self.label)
 
         self.totalDetectedLitterLabel = QLabel(self.centerLeftFrame)
         self.totalDetectedLitterLabel.setObjectName(u"totalDetectedLitterLabel")
-        font6 = QFont()
-        font6.setPointSize(16)
-        font6.setBold(False)
-        self.totalDetectedLitterLabel.setFont(font6)
+        font7 = QFont()
+        font7.setPointSize(16)
+        font7.setBold(False)
+        self.totalDetectedLitterLabel.setFont(font7)
         self.totalDetectedLitterLabel.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_8.addWidget(self.totalDetectedLitterLabel)
@@ -333,14 +341,14 @@ class Ui_MainWindow(object):
         self.verticalLayout_9.setObjectName(u"verticalLayout_9")
         self.label_3 = QLabel(self.centerLeftFrame)
         self.label_3.setObjectName(u"label_3")
-        self.label_3.setFont(font1)
+        self.label_3.setFont(font6)
         self.label_3.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_9.addWidget(self.label_3)
 
         self.averageDailyDetectedLitterLabel = QLabel(self.centerLeftFrame)
         self.averageDailyDetectedLitterLabel.setObjectName(u"averageDailyDetectedLitterLabel")
-        self.averageDailyDetectedLitterLabel.setFont(font6)
+        self.averageDailyDetectedLitterLabel.setFont(font7)
         self.averageDailyDetectedLitterLabel.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_9.addWidget(self.averageDailyDetectedLitterLabel)
@@ -354,14 +362,14 @@ class Ui_MainWindow(object):
         self.verticalLayout_10.setObjectName(u"verticalLayout_10")
         self.label_4 = QLabel(self.centerLeftFrame)
         self.label_4.setObjectName(u"label_4")
-        self.label_4.setFont(font1)
+        self.label_4.setFont(font6)
         self.label_4.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_10.addWidget(self.label_4)
 
         self.totalRecyclableLitterLabel = QLabel(self.centerLeftFrame)
         self.totalRecyclableLitterLabel.setObjectName(u"totalRecyclableLitterLabel")
-        self.totalRecyclableLitterLabel.setFont(font6)
+        self.totalRecyclableLitterLabel.setFont(font7)
         self.totalRecyclableLitterLabel.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_10.addWidget(self.totalRecyclableLitterLabel)
@@ -375,14 +383,14 @@ class Ui_MainWindow(object):
         self.verticalLayout_11.setObjectName(u"verticalLayout_11")
         self.label_6 = QLabel(self.centerLeftFrame)
         self.label_6.setObjectName(u"label_6")
-        self.label_6.setFont(font1)
+        self.label_6.setFont(font6)
         self.label_6.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_11.addWidget(self.label_6)
 
         self.totalNonRecyclableLitterLabel = QLabel(self.centerLeftFrame)
         self.totalNonRecyclableLitterLabel.setObjectName(u"totalNonRecyclableLitterLabel")
-        self.totalNonRecyclableLitterLabel.setFont(font6)
+        self.totalNonRecyclableLitterLabel.setFont(font7)
         self.totalNonRecyclableLitterLabel.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_11.addWidget(self.totalNonRecyclableLitterLabel)
@@ -409,13 +417,14 @@ class Ui_MainWindow(object):
         self.verticalLayout_13.setObjectName(u"verticalLayout_13")
         self.label_9 = QLabel(self.centerCenterFrame)
         self.label_9.setObjectName(u"label_9")
-        self.label_9.setFont(font1)
+        self.label_9.setFont(font6)
         self.label_9.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_13.addWidget(self.label_9)
 
         self.recyclableLitterListWidget = QListWidget(self.centerCenterFrame)
         self.recyclableLitterListWidget.setObjectName(u"recyclableLitterListWidget")
+        self.recyclableLitterListWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.recyclableLitterListWidget.setLayoutMode(QListView.SinglePass)
         self.recyclableLitterListWidget.setModelColumn(0)
 
@@ -430,13 +439,17 @@ class Ui_MainWindow(object):
         self.verticalLayout_14.setObjectName(u"verticalLayout_14")
         self.label_10 = QLabel(self.centerCenterFrame)
         self.label_10.setObjectName(u"label_10")
-        self.label_10.setFont(font1)
+        font8 = QFont()
+        font8.setPointSize(10)
+        font8.setBold(True)
+        self.label_10.setFont(font8)
         self.label_10.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_14.addWidget(self.label_10)
 
         self.nonRecyclableLitterListWidget = QListWidget(self.centerCenterFrame)
         self.nonRecyclableLitterListWidget.setObjectName(u"nonRecyclableLitterListWidget")
+        self.nonRecyclableLitterListWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.verticalLayout_14.addWidget(self.nonRecyclableLitterListWidget)
 
@@ -450,18 +463,20 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.centerCenterFrame)
 
-        self.centerRightFrame = QFrame(self.centerFrame)
-        self.centerRightFrame.setObjectName(u"centerRightFrame")
-        self.centerRightFrame.setFrameShape(QFrame.Panel)
-        self.centerRightFrame.setFrameShadow(QFrame.Sunken)
-        self.gridLayout_4 = QGridLayout(self.centerRightFrame)
-        self.gridLayout_4.setObjectName(u"gridLayout_4")
+        self.lineChartFrame = QFrame(self.centerFrame)
+        self.lineChartFrame.setObjectName(u"lineChartFrame")
+        self.lineChartFrame.setFrameShape(QFrame.Panel)
+        self.lineChartFrame.setFrameShadow(QFrame.Sunken)
+        self.lineChartFrame.setLineWidth(1)
+        self.lineChartGridLayout = QGridLayout(self.lineChartFrame)
+        self.lineChartGridLayout.setObjectName(u"lineChartGridLayout")
+        self.lineChartGridLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.horizontalLayout.addWidget(self.centerRightFrame)
+        self.horizontalLayout.addWidget(self.lineChartFrame)
 
         self.horizontalLayout.setStretch(0, 2)
-        self.horizontalLayout.setStretch(1, 4)
-        self.horizontalLayout.setStretch(2, 4)
+        self.horizontalLayout.setStretch(1, 2)
+        self.horizontalLayout.setStretch(2, 6)
 
         self.verticalLayout_6.addWidget(self.centerFrame)
 
@@ -472,33 +487,25 @@ class Ui_MainWindow(object):
         self.horizontalLayout_4 = QHBoxLayout(self.bottomFrame)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
-        self.frame = QFrame(self.bottomFrame)
-        self.frame.setObjectName(u"frame")
-        self.frame.setFrameShape(QFrame.Panel)
-        self.frame.setFrameShadow(QFrame.Sunken)
-        self.gridLayout_5 = QGridLayout(self.frame)
-        self.gridLayout_5.setObjectName(u"gridLayout_5")
-        self.barChart = QLabel(self.frame)
-        self.barChart.setObjectName(u"barChart")
+        self.barChartFrame = QFrame(self.bottomFrame)
+        self.barChartFrame.setObjectName(u"barChartFrame")
+        self.barChartFrame.setFrameShape(QFrame.Panel)
+        self.barChartFrame.setFrameShadow(QFrame.Sunken)
+        self.barChartGridLayout = QGridLayout(self.barChartFrame)
+        self.barChartGridLayout.setObjectName(u"barChartGridLayout")
+        self.barChartGridLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.gridLayout_5.addWidget(self.barChart, 0, 0, 1, 1)
+        self.horizontalLayout_4.addWidget(self.barChartFrame)
 
+        self.pieChartFrame = QFrame(self.bottomFrame)
+        self.pieChartFrame.setObjectName(u"pieChartFrame")
+        self.pieChartFrame.setFrameShape(QFrame.Panel)
+        self.pieChartFrame.setFrameShadow(QFrame.Sunken)
+        self.pieChartGridLayout = QGridLayout(self.pieChartFrame)
+        self.pieChartGridLayout.setObjectName(u"pieChartGridLayout")
+        self.pieChartGridLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.horizontalLayout_4.addWidget(self.frame)
-
-        self.frame_2 = QFrame(self.bottomFrame)
-        self.frame_2.setObjectName(u"frame_2")
-        self.frame_2.setFrameShape(QFrame.Panel)
-        self.frame_2.setFrameShadow(QFrame.Sunken)
-        self.gridLayout_6 = QGridLayout(self.frame_2)
-        self.gridLayout_6.setObjectName(u"gridLayout_6")
-        self.pieChart = QLabel(self.frame_2)
-        self.pieChart.setObjectName(u"pieChart")
-
-        self.gridLayout_6.addWidget(self.pieChart, 0, 0, 1, 1)
-
-
-        self.horizontalLayout_4.addWidget(self.frame_2)
+        self.horizontalLayout_4.addWidget(self.pieChartFrame)
 
 
         self.verticalLayout_6.addWidget(self.bottomFrame)
@@ -522,6 +529,7 @@ class Ui_MainWindow(object):
 
 
         QMetaObject.connectSlotsByName(MainWindow)
+    # setupUi
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
@@ -550,10 +558,9 @@ class Ui_MainWindow(object):
         self.totalNonRecyclableLitterLabel.setText(QCoreApplication.translate("MainWindow", u"0", None))
         self.label_9.setText(QCoreApplication.translate("MainWindow", u"Recyclable Litter", None))
         self.label_10.setText(QCoreApplication.translate("MainWindow", u"Non-Recyclable Litter", None))
-        self.barChart.setText(QCoreApplication.translate("MainWindow", u"Amount of Total Detected Litter per class (Bar chart)", None))
-        self.pieChart.setText(QCoreApplication.translate("MainWindow", u"Percentage Distribution of Total Detected Litter per class (Pie chart)", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.reportTab), QCoreApplication.translate("MainWindow", u"Report", None))
-
+    # retranslateUi
+        
 class Ui_settingsDialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():

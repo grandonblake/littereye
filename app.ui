@@ -46,7 +46,7 @@
        </font>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="detectTab">
        <attribute name="title">
@@ -480,7 +480,7 @@
           <property name="frameShadow">
            <enum>QFrame::Raised</enum>
           </property>
-          <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,4,4">
+          <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,2,6">
            <property name="leftMargin">
             <number>0</number>
            </property>
@@ -508,7 +508,7 @@
                  <widget class="QLabel" name="label">
                   <property name="font">
                    <font>
-                    <pointsize>14</pointsize>
+                    <pointsize>11</pointsize>
                     <weight>75</weight>
                     <bold>true</bold>
                    </font>
@@ -546,7 +546,7 @@
                  <widget class="QLabel" name="label_3">
                   <property name="font">
                    <font>
-                    <pointsize>14</pointsize>
+                    <pointsize>11</pointsize>
                     <weight>75</weight>
                     <bold>true</bold>
                    </font>
@@ -584,7 +584,7 @@
                  <widget class="QLabel" name="label_4">
                   <property name="font">
                    <font>
-                    <pointsize>14</pointsize>
+                    <pointsize>11</pointsize>
                     <weight>75</weight>
                     <bold>true</bold>
                    </font>
@@ -622,7 +622,7 @@
                  <widget class="QLabel" name="label_6">
                   <property name="font">
                    <font>
-                    <pointsize>14</pointsize>
+                    <pointsize>11</pointsize>
                     <weight>75</weight>
                     <bold>true</bold>
                    </font>
@@ -672,7 +672,7 @@
                  <widget class="QLabel" name="label_9">
                   <property name="font">
                    <font>
-                    <pointsize>14</pointsize>
+                    <pointsize>11</pointsize>
                     <weight>75</weight>
                     <bold>true</bold>
                    </font>
@@ -687,6 +687,9 @@
                 </item>
                 <item>
                  <widget class="QListWidget" name="recyclableLitterListWidget">
+                  <property name="horizontalScrollBarPolicy">
+                   <enum>Qt::ScrollBarAlwaysOff</enum>
+                  </property>
                   <property name="layoutMode">
                    <enum>QListView::SinglePass</enum>
                   </property>
@@ -703,7 +706,7 @@
                  <widget class="QLabel" name="label_10">
                   <property name="font">
                    <font>
-                    <pointsize>14</pointsize>
+                    <pointsize>10</pointsize>
                     <weight>75</weight>
                     <bold>true</bold>
                    </font>
@@ -717,7 +720,11 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QListWidget" name="nonRecyclableLitterListWidget"/>
+                 <widget class="QListWidget" name="nonRecyclableLitterListWidget">
+                  <property name="horizontalScrollBarPolicy">
+                   <enum>Qt::ScrollBarAlwaysOff</enum>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </item>
@@ -725,21 +732,29 @@
             </widget>
            </item>
            <item>
-            <widget class="QFrame" name="centerRightFrame">
+            <widget class="QFrame" name="lineChartFrame">
              <property name="frameShape">
               <enum>QFrame::Panel</enum>
              </property>
              <property name="frameShadow">
               <enum>QFrame::Sunken</enum>
              </property>
-             <layout class="QGridLayout" name="gridLayout_4">
-              <item row="0" column="0">
-               <widget class="QLabel" name="lineChart">
-                <property name="text">
-                 <string>Line Chart showing total detected litter per day on a span of a date</string>
-                </property>
-               </widget>
-              </item>
+             <property name="lineWidth">
+              <number>1</number>
+             </property>
+             <layout class="QGridLayout" name="lineChartGridLayout">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
              </layout>
             </widget>
            </item>
@@ -768,40 +783,50 @@
             <number>0</number>
            </property>
            <item>
-            <widget class="QFrame" name="frame">
+            <widget class="QFrame" name="barChartFrame">
              <property name="frameShape">
               <enum>QFrame::Panel</enum>
              </property>
              <property name="frameShadow">
               <enum>QFrame::Sunken</enum>
              </property>
-             <layout class="QGridLayout" name="gridLayout_5">
-              <item row="0" column="0">
-               <widget class="QLabel" name="barChart">
-                <property name="text">
-                 <string>Amount of Total Detected Litter per class (Bar chart)</string>
-                </property>
-               </widget>
-              </item>
+             <layout class="QGridLayout" name="barChartGridLayout">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
              </layout>
             </widget>
            </item>
            <item>
-            <widget class="QFrame" name="frame_2">
+            <widget class="QFrame" name="pieChartFrame">
              <property name="frameShape">
               <enum>QFrame::Panel</enum>
              </property>
              <property name="frameShadow">
               <enum>QFrame::Sunken</enum>
              </property>
-             <layout class="QGridLayout" name="gridLayout_6">
-              <item row="0" column="0">
-               <widget class="QLabel" name="pieChart">
-                <property name="text">
-                 <string>Percentage Distribution of Total Detected Litter per class (Pie chart)</string>
-                </property>
-               </widget>
-              </item>
+             <layout class="QGridLayout" name="pieChartGridLayout">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
              </layout>
             </widget>
            </item>
