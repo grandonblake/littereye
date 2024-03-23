@@ -1,6 +1,6 @@
 from PySide6.QtCore import (QDate, QObject, Qt)
 from PySide6.QtGui import (QImage, QPixmap)
-from PySide6.QtWidgets import (QMainWindow, QDialog)
+from PySide6.QtWidgets import (QMainWindow, QDialog, QMessageBox)
 
 from PySide6 import QtWidgets
 
@@ -88,7 +88,7 @@ class VideoWorker(QObject):
                             with Database() as database:
                                 database.insertObject(objectID=maxID, className=object_name, confidenceLevel=object_conf, recyclableBool=recyclableBool, dateTime=formattedDateTimeNow)
 
-                                # database.selectAll()
+                                # database.selectAllObjects()
 
                 # Emit the detected objects list, even if it's empty
                 self.objectListUpdated.emit(list(detected_objects.values()))
@@ -171,6 +171,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.models = self.getAvailableModels()  # list of models
         self.availableCameras = self.getAvailableCameras() #list of cameras
         self.maxID = self.maxIDFromDatabase()
+        self.alert_dialog_shown = False
         
         self.StartRecordButton.clicked.connect(self.toggle_recording)  # Connect the button
         
@@ -206,7 +207,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 available_cameras.append(i)
                 cap.release()
             i += 1
-            available_cameras.append('rtsp://TAPOC200:TapoC200!@192.168.1.8:554/stream1')
+            
+        available_cameras.append('rtsp://TAPOC200:TapoC200!@192.168.1.18:554/stream1')
         return available_cameras
 
     def getAvailableModels(self):
@@ -256,11 +258,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.listWidget.clear()
         for obj, count in object_counts.items():
-            self.listWidget.addItem(f"{obj} - {count}") 
+            self.listWidget.addItem(f"{obj} - {count}")
 
         # Calculate and display total objects
         total_objects = sum(object_counts.values())
         self.totalObjectsDetectedNumber.setText(str(total_objects))
+
+        # Check alerts and display alertDialogBox if necessary
+        with Database() as database:
+            alerts = database.selectAllAlerts()
+            for item_name, alert_amount in alerts:
+                if item_name == "All Classes":
+                    if total_objects >= alert_amount:
+                        self.alertDialogBox(item_name, alert_amount)
+                else:
+                    if object_counts.get(item_name, 0) >= alert_amount:
+                        self.alertDialogBox(item_name, alert_amount)
 
     def onAdvancedSettingsClicked(self):
         advancedSettings = settingsDialog(self, self.models, self.model_index, self.conf, self.iou)
@@ -467,8 +480,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pieChartGridLayout.addWidget(canvas)  # Assuming you want to place it at the top
         canvas.draw()  # Draw the chart on the canvas
 
+    def alertDialogBox(self, className, alertAmount):
+        print(self.alert_dialog_shown)
+        if not self.alert_dialog_shown:
+            self.alert_dialog_shown = True
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Alert!")
+            dlg.setText(f"{className} has reached the amount of {alertAmount}!")
+            dlg.setStandardButtons(QMessageBox.Close)
+            dlg.setIcon(QMessageBox.Warning)
+            dlg.buttonClicked.connect(self.resetAlertDialogFlag)
+            dlg.exec()
+
+    def resetAlertDialogFlag(self):
+        self.alert_dialog_shown = False
+
     def handle_error(self, message):
         print(f"Error occurred: {message}")
+
+    def closeEvent(self, event):
+        if hasattr(self, 'worker') and self.worker.is_recording:
+            self.worker.stop_recording()  # Stop recording before closing
+            self.thread.quit()  # Stop the thread
+        super().closeEvent(event)
 
 class settingsDialog(Ui_settingsDialog, QDialog):
     modelChanged = Signal(int)
@@ -526,8 +560,43 @@ class setAlertDialog(Ui_setAlertDialog, QDialog):
         self.names = names if names is not None else {}
 
         # Populate the comboBox with the values from the names dictionary
-        for name in self.names.values():
-            self.comboBox.addItem(name)
+        with Database() as database:
+            alerts = database.selectAllAlerts()
+            existing_items = set(item_name for item_name, _ in alerts)
+
+            self.comboBox.addItem("All Classes")  # adds the 'All Classes' option
+
+            # Add items from the names dictionary that are not in the database
+            for name in self.names.values():
+                if name not in existing_items:
+                    self.comboBox.addItem(name)
+
+            # Sort the items in the comboBox alphabetically
+            self.comboBox.model().sort(0)
+
+        self.populate_rows_from_database()
+        
+    def save_to_database(self, item_name, amount):
+        with Database() as database:
+            print("INSERT")
+            database.insertAlert(item_name, int(amount))
+
+            print("SELECTALL")
+            print(database.selectAllAlerts())
+
+    def remove_from_database(self, item_name):
+        with Database() as database:
+            print("REMOVE")
+            database.removeAlert(item_name)
+
+            print("SELECTALL")
+            print(database.selectAllAlerts())
+
+    def populate_rows_from_database(self):
+        with Database() as database:
+            alerts = database.selectAllAlerts()
+            for item_name, amount in alerts:
+                self.add_row(item_name, amount)
 
 app = QtWidgets.QApplication(sys.argv)
 

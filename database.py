@@ -12,7 +12,7 @@ class Database():
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.db.close()
 
-    def createTable(self):
+    def createObjectsTable(self):
         createTableQuery = QSqlQuery()
         createTableQuery.exec(
             """
@@ -26,6 +26,25 @@ class Database():
             """
         )
 
+    def createAlertsTable(self):
+        createTableQuery = QSqlQuery()
+        createTableQuery.exec(
+            """
+            CREATE TABLE alerts (
+                className TEXT PRIMARY KEY UNIQUE NOT NULL,
+                alertAmount INTEGER NOT NULL
+            )
+            """
+        )
+
+    def dropTable(self):
+        createTableQuery = QSqlQuery()
+        createTableQuery.exec(
+            """
+            DROP TABLE alerts
+            """
+        )
+    
     def insertObject(self, objectID, className, confidenceLevel, recyclableBool, dateTime):
         query = QSqlQuery()
         query.prepare(
@@ -41,8 +60,31 @@ class Database():
         #Parameterization - to prevent SQL injection vulnerabilities
         if not query.exec_():
             print(f"Error inserting object: {query.lastError().text()}")
-        
-    def selectAll(self):
+
+    def insertAlert(self, className, alertAmount):
+        query = QSqlQuery()
+        query.prepare(
+            "INSERT INTO alerts (className, alertAmount) "
+            "VALUES (?, ?)"
+        )
+        query.addBindValue(className)
+        query.addBindValue(alertAmount)
+
+        #Parameterization - to prevent SQL injection vulnerabilities
+        if not query.exec_():
+            print(f"Error inserting object: {query.lastError().text()}")
+            
+    def removeAlert(self, className):
+        query = QSqlQuery()
+        query.prepare(
+            "DELETE FROM alerts WHERE className = ?"
+        )
+        query.addBindValue(className)
+
+        if not query.exec_():
+            print(f"Error deleting object: {query.lastError().text()}")
+
+    def selectAllObjects(self):
         query = QSqlQuery()
         query.exec(
         """
@@ -53,13 +95,29 @@ class Database():
         while query.next():
             print(query.value("objectID"), query.value("className"), query.value("confidenceLevel"), query.value("recyclableBool"), query.value("dateTime"))
 
+    def selectAllAlerts(self):
+        query = QSqlQuery()
+        query.exec(
+        """
+        SELECT * FROM alerts
+        """
+        )
+
+        alerts = []
+        while query.next():
+            item_name = query.value("className")
+            amount = query.value("alertAmount")
+            alerts.append((item_name, amount))
+
+        return alerts
+
     def truncateTable(self):
         self.db.open()
 
         query = QSqlQuery()
         query.exec(
             """
-            DELETE FROM objects
+            DELETE FROM alerts
             """
         )
 

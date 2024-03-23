@@ -754,8 +754,8 @@ class Ui_settingsDialog(object):
 class Ui_setAlertDialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():
-            Dialog.setObjectName(u"Dialog")
-        Dialog.resize(254, 120)
+            Dialog.setObjectName(u"Set Alert")
+        Dialog.resize(250, 250)
         Dialog.setMinimumSize(QSize(0, 0))
         Dialog.setMaximumSize(QSize(16777215, 16777215))
         self.verticalLayout = QVBoxLayout(Dialog)
@@ -791,13 +791,13 @@ class Ui_setAlertDialog(object):
 
         self.gridLayout.addWidget(self.lineEdit, 1, 1, 1, 1)
 
-        self.pushButton = QPushButton(self.frame)
-        self.pushButton.setObjectName(u"pushButton")
+        self.addButton = QPushButton(self.frame)
+        self.addButton.setObjectName(u"addButton")
         font1 = QFont()
         font1.setBold(True)
-        self.pushButton.setFont(font1)
+        self.addButton.setFont(font1)
 
-        self.gridLayout.addWidget(self.pushButton, 1, 2, 1, 1)
+        self.gridLayout.addWidget(self.addButton, 1, 2, 1, 1)
 
         self.gridLayout.setRowStretch(0, 5)
         self.gridLayout.setRowStretch(1, 5)
@@ -820,33 +820,9 @@ class Ui_setAlertDialog(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 238, 52))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 228, 159))
         self.verticalLayout_2 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.label_3 = QLabel(self.scrollAreaWidgetContents)
-        self.label_3.setObjectName(u"label_3")
-
-        self.horizontalLayout.addWidget(self.label_3)
-
-        self.label_4 = QLabel(self.scrollAreaWidgetContents)
-        self.label_4.setObjectName(u"label_4")
-
-        self.horizontalLayout.addWidget(self.label_4)
-
-        self.pushButton_2 = QPushButton(self.scrollAreaWidgetContents)
-        self.pushButton_2.setObjectName(u"pushButton_2")
-        self.pushButton_2.setFont(font1)
-
-        self.horizontalLayout.addWidget(self.pushButton_2)
-
-        self.horizontalLayout.setStretch(0, 8)
-        self.horizontalLayout.setStretch(1, 1)
-        self.horizontalLayout.setStretch(2, 1)
-
-        self.verticalLayout_2.addLayout(self.horizontalLayout)
-
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 
         self.gridLayout_2.addWidget(self.scrollArea, 0, 0, 1, 1)
@@ -859,46 +835,70 @@ class Ui_setAlertDialog(object):
 
         self.retranslateUi(Dialog)
 
-        self.pushButton.clicked.connect(self.add_row)
+        self.addButton.clicked.connect(self.add_row)
 
         QMetaObject.connectSlotsByName(Dialog)
-    
+
     def retranslateUi(self, Dialog):
         Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Dialog", None))
         self.label.setText(QCoreApplication.translate("Dialog", u"Class", None))
         self.label_2.setText(QCoreApplication.translate("Dialog", u"Amount", None))
-        self.pushButton.setText(QCoreApplication.translate("Dialog", u"Add", None))
-        self.label_3.setText(QCoreApplication.translate("Dialog", u"Plastic bottle", None))
-        self.label_4.setText(QCoreApplication.translate("Dialog", u"5", None))
-        self.pushButton_2.setText(QCoreApplication.translate("Dialog", u"Remove", None))
-    
-    def add_row(self):
-        item_name = self.comboBox.currentText()  
-        amount = self.lineEdit.text()         
+        self.addButton.setText(QCoreApplication.translate("Dialog", u"Add", None))
+
+    def add_row(self, item_name=None, amount=None):
+        if item_name is None:
+            item_name = self.comboBox.currentText()
+        if amount is None:
+            amount = self.lineEdit.text()     
 
         if item_name and amount:
             new_horizontal_layout = QHBoxLayout()
             new_horizontal_layout.setObjectName("horizontalLayout_" + item_name) 
 
             label_item = QLabel(self.scrollAreaWidgetContents)
-            label_item.setObjectName("label_" + item_name) 
+            label_item.setObjectName("className_" + item_name) 
             label_item.setText(item_name)
             new_horizontal_layout.addWidget(label_item)
 
             label_amount = QLabel(self.scrollAreaWidgetContents)
-            label_amount.setObjectName("label_amount_" + item_name)
-            label_amount.setText(amount)
+            label_amount.setObjectName("alertAmount_" + item_name)
+            label_amount.setText(str(amount))
             new_horizontal_layout.addWidget(label_amount)
 
             button_remove = QPushButton(self.scrollAreaWidgetContents)
-            button_remove.setObjectName("pushButton_remove_" + item_name) 
+            button_remove.setObjectName("removeButton_" + item_name) 
             button_remove.setText("Remove")
             button_remove.setFont(QFont('Arial', pointSize=9, weight=QFont.Bold))
+            button_remove.clicked.connect(lambda: self.remove_row(new_horizontal_layout, item_name))
             new_horizontal_layout.addWidget(button_remove)
 
             new_horizontal_layout.setStretch(0, 8)
             new_horizontal_layout.setStretch(1, 1)
             new_horizontal_layout.setStretch(2, 1)
 
+            print("UI.PY")
+            self.save_to_database(item_name, amount)
+
+            if item_name == self.comboBox.currentText(): # removes selected option in drop down list
+                self.comboBox.removeItem(self.comboBox.findText(item_name))
+
             self.verticalLayout_2.addLayout(new_horizontal_layout)
             self.lineEdit.clear()
+
+    def remove_row(self, layout, item_name):
+        # Add the removed item back to the drop-down list
+        self.comboBox.addItem(item_name)
+
+        # Sort the items in the comboBox alphabetically
+        self.comboBox.model().sort(0)
+
+        self.remove_from_database(item_name)
+
+        for i in reversed(range(layout.count())):
+            item = layout.itemAt(i)
+            if item.widget():
+                item.widget().deleteLater()
+            else:
+                self.remove_row(item.layout(), item_name)
+        self.verticalLayout_2.removeItem(layout)
+        layout.deleteLater()
