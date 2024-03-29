@@ -30,6 +30,7 @@ class VideoWorker(QObject):
         self.recording_out = None  # Video writer object
         self.maxID = maxID
         self.fps = 0.0
+        self.recording_out = None
 
         self.names = {}
 
@@ -223,27 +224,50 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def runInference(self):
         if hasattr(self, 'worker'):
-            # Stop the current video capture and release the camera
-            self.worker.imageUpdated.disconnect()
-            self.worker.errorOccurred.disconnect()
-            self.thread.quit()
-            self.video_capture.release()
+            if self.worker.is_recording:
+                # If currently recording, create a new video capture without stopping the recording
+                self.worker.capture = cv2.VideoCapture(self.CameraSourceComboBox.currentData())
 
-        # Start a new video capture with the selected camera
-        self.current_camera_index = self.CameraSourceComboBox.currentData()
-        self.video_capture = cv2.VideoCapture(self.current_camera_index)
-        # self.video_capture = cv2.VideoCapture('rtsp://TAPOC200:TapoC200!@192.168.1.8:554/stream1')
+                # Update the worker's model index, confidence, and IOU threshold
+                self.worker.model_index = self.model_index
+                self.worker.conf = self.conf
+                self.worker.iou = self.iou
+            else:
+                # If not recording, stop the current worker and release the camera
+                self.worker.imageUpdated.disconnect()
+                self.worker.errorOccurred.disconnect()
+                self.thread.quit()
+                self.video_capture.release()
 
-        self.thread = QThread(self)
-        self.worker = VideoWorker(self.video_capture, self.model_index, self.conf, self.iou, self.models, self.maxID)
-        self.worker.moveToThread(self.thread)
+                # Start a new video capture with the selected camera and create a new worker
+                self.current_camera_index = self.CameraSourceComboBox.currentData()
+                self.video_capture = cv2.VideoCapture(self.current_camera_index)
 
-        self.worker.imageUpdated.connect(self.update_frame)
-        self.worker.objectListUpdated.connect(self.update_list_widget)
-        self.worker.errorOccurred.connect(self.handle_error)
-        self.thread.started.connect(self.worker.run)
+                self.thread = QThread(self)
+                self.worker = VideoWorker(self.video_capture, self.model_index, self.conf, self.iou, self.models, self.maxID)
+                self.worker.moveToThread(self.thread)
 
-        self.thread.start()
+                self.worker.imageUpdated.connect(self.update_frame)
+                self.worker.objectListUpdated.connect(self.update_list_widget)
+                self.worker.errorOccurred.connect(self.handle_error)
+                self.thread.started.connect(self.worker.run)
+
+                self.thread.start()
+        else:
+            # If the worker doesn't exist, start a new video capture with the selected camera and create a new worker
+            self.current_camera_index = self.CameraSourceComboBox.currentData()
+            self.video_capture = cv2.VideoCapture(self.current_camera_index)
+
+            self.thread = QThread(self)
+            self.worker = VideoWorker(self.video_capture, self.model_index, self.conf, self.iou, self.models, self.maxID)
+            self.worker.moveToThread(self.thread)
+
+            self.worker.imageUpdated.connect(self.update_frame)
+            self.worker.objectListUpdated.connect(self.update_list_widget)
+            self.worker.errorOccurred.connect(self.handle_error)
+            self.thread.started.connect(self.worker.run)
+
+            self.thread.start()
 
     def update_frame(self, image):
         pixmap = QPixmap.fromImage(image)
