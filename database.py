@@ -1,19 +1,27 @@
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
 
 class Database():
-    def __init__(self):
-        self.db = QSqlDatabase.addDatabase("QSQLITE")
+    def __init__(self, connectionName):
+        self.db = QSqlDatabase.addDatabase("QSQLITE", connectionName)
         self.db.setDatabaseName("database")
 
     def __enter__(self):
-        self.db.open()
+        if not self.db.open():
+            raise Exception(f"Failed to open database: {self.db.lastError().text()}")
+        # Check if the database is open
+        if self.db.isOpen():
+            print(f"Database {self.db.connectionName()} is open.")
+        else:
+            print(f"Database {self.db.connectionName()} is not open.")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.db.close()
+        QSqlDatabase.removeDatabase(self.db.connectionName())
+
 
     def createObjectsTable(self):
-        createTableQuery = QSqlQuery()
+        createTableQuery = QSqlQuery(self.db)
         createTableQuery.exec(
             """
             CREATE TABLE objects (
@@ -27,7 +35,7 @@ class Database():
         )
 
     def createAlertsTable(self):
-        createTableQuery = QSqlQuery()
+        createTableQuery = QSqlQuery(self.db)
         createTableQuery.exec(
             """
             CREATE TABLE alerts (
@@ -38,7 +46,7 @@ class Database():
         )
 
     def dropTable(self):
-        createTableQuery = QSqlQuery()
+        createTableQuery = QSqlQuery(self.db)
         createTableQuery.exec(
             """
             DROP TABLE alerts
@@ -46,7 +54,7 @@ class Database():
         )
     
     def insertObject(self, objectID, className, confidenceLevel, recyclableBool, dateTime):
-        query = QSqlQuery()
+        query = QSqlQuery(self.db)
         query.prepare(
             "INSERT INTO objects (objectID, className, confidenceLevel, recyclableBool, dateTime)"
             "VALUES (?, ?, ?, ?, ?)"
@@ -62,7 +70,7 @@ class Database():
             print(f"Error inserting object: {query.lastError().text()}")
 
     def insertAlert(self, className, alertAmount):
-        query = QSqlQuery()
+        query = QSqlQuery(self.db)
         query.prepare(
             "INSERT INTO alerts (className, alertAmount) "
             "VALUES (?, ?)"
@@ -75,9 +83,10 @@ class Database():
             print(f"Error inserting object: {query.lastError().text()}")
             
     def removeAlert(self, className):
-        query = QSqlQuery()
+        query = QSqlQuery(self.db)
         query.prepare(
-            "DELETE FROM alerts WHERE className = ?"
+            """DELETE FROM alerts 
+            WHERE className = ?"""
         )
         query.addBindValue(className)
 
@@ -85,10 +94,11 @@ class Database():
             print(f"Error deleting object: {query.lastError().text()}")
 
     def selectAllObjects(self):
-        query = QSqlQuery()
+        query = QSqlQuery(self.db)
         query.exec(
         """
-        SELECT * FROM objects
+        SELECT * 
+        FROM objects
         """
         )
 
@@ -96,10 +106,11 @@ class Database():
             print(query.value("objectID"), query.value("className"), query.value("confidenceLevel"), query.value("recyclableBool"), query.value("dateTime"))
 
     def selectAllAlerts(self):
-        query = QSqlQuery()
+        query = QSqlQuery(self.db)
         query.exec(
         """
-        SELECT * FROM alerts
+        SELECT * 
+        FROM alerts
         """
         )
 
@@ -114,10 +125,11 @@ class Database():
     def truncateTable(self):
         self.db.open()
 
-        query = QSqlQuery()
+        query = QSqlQuery(self.db)
         query.exec(
             """
-            DELETE FROM alerts
+            DELETE 
+            FROM alerts
             """
         )
 
@@ -125,10 +137,11 @@ class Database():
             print(f"Error truncating table: {query.lastError().text()}")
 
     def selectMaxID(self):
-        query = QSqlQuery()
+        query = QSqlQuery(self.db)
         query.exec(
         """
-        SELECT MAX(objectID) FROM objects
+        SELECT MAX(objectID) 
+        FROM objects
         """
         )
 
@@ -138,11 +151,14 @@ class Database():
         return max_id
     
     def updateDateEdits(self):  # Add 'self' as the method belongs to a class
-        query = QSqlQuery()
+        query = QSqlQuery(self.db)
         # Retrieve the earliest and latest dates
         query.exec(
         """
-        SELECT MIN(dateTime), MAX(dateTime) FROM objects
+        SELECT 
+            MIN(dateTime), 
+            MAX(dateTime) 
+        FROM objects
         """
         )
 
@@ -154,11 +170,15 @@ class Database():
         return earliest_date_str, latest_date_str 
 
     def count_rows_by_date_range(self, from_date, to_date):
-        query = QSqlQuery()
+        query = QSqlQuery(self.db)
         query.prepare(
         """
-        SELECT COUNT(*) FROM objects WHERE dateTime BETWEEN :from_date AND :to_date
-        """)
+        SELECT COUNT(*) 
+        FROM objects 
+        WHERE dateTime 
+        BETWEEN :from_date AND :to_date
+        """
+        )
         query.bindValue(":from_date", from_date)
         query.bindValue(":to_date", to_date)
         query.exec()
@@ -167,8 +187,18 @@ class Database():
         return query.value(0)
     
     def average_daily_detected_litter(self, from_date, to_date):
-        query = QSqlQuery()
-        query.prepare("SELECT SUM(count) as total_count, COUNT(DISTINCT DATE(dateTime)) as num_days FROM (SELECT COUNT(*) as count, DATE(dateTime) as date FROM objects WHERE dateTime BETWEEN :from_date AND :to_date GROUP BY date)")
+        query = QSqlQuery(self.db)
+        query.prepare(
+            """
+            SELECT SUM(count) as total_count, 
+                COUNT(DISTINCT DATE(dateTime)) as num_days 
+            FROM (SELECT COUNT(*) as count, DATE(dateTime) as date 
+                FROM objects 
+                WHERE dateTime 
+                BETWEEN :from_date AND :to_date 
+                GROUP BY date)
+            """
+            )
         query.bindValue(":from_date", from_date)
         query.bindValue(":to_date", to_date)
         query.exec()
@@ -183,15 +213,17 @@ class Database():
             return None  # Or handle the case of no data in the range
         
     def litter_composition(self, from_date, to_date):
-        query = QSqlQuery()
-        query.prepare("""
-            SELECT 
-                SUM(CASE WHEN recyclableBool = 1 THEN 1 ELSE 0 END) as recyclable_count,
-                SUM(CASE WHEN recyclableBool = 0 THEN 1 ELSE 0 END) as non_recyclable_count,
-                COUNT(*) as total_count 
-            FROM objects 
-            WHERE dateTime BETWEEN :from_date AND :to_date
-        """)
+        query = QSqlQuery(self.db)
+        query.prepare(
+        """
+        SELECT 
+            SUM(CASE WHEN recyclableBool = 1 THEN 1 ELSE 0 END) as recyclable_count,
+            SUM(CASE WHEN recyclableBool = 0 THEN 1 ELSE 0 END) as non_recyclable_count,
+            COUNT(*) as total_count
+        FROM objects 
+        WHERE dateTime BETWEEN :from_date AND :to_date
+        """
+        )
         query.bindValue(":from_date", from_date)
         query.bindValue(":to_date", to_date)
         query.exec()
@@ -210,13 +242,16 @@ class Database():
             return None  # Or handle the case of no data in the range
 
     def litter_summary(self, from_date, to_date, recyclable):
-        query = QSqlQuery()
-        query.prepare("""
-            SELECT className, COUNT(*) as count 
-            FROM objects 
-            WHERE recyclableBool = :recyclable AND dateTime BETWEEN :from_date AND :to_date
-            GROUP BY className
-        """)
+        query = QSqlQuery(self.db)
+        query.prepare(
+        """
+        SELECT className, COUNT(*) as count 
+        FROM objects 
+        WHERE recyclableBool = :recyclable 
+        AND dateTime BETWEEN :from_date AND :to_date
+        GROUP BY className
+        """
+        )
         query.bindValue(":from_date", from_date)
         query.bindValue(":to_date", to_date)
         query.bindValue(":recyclable", 1 if recyclable else 0)  # Bind 1 for recyclable, 0 otherwise
@@ -231,8 +266,17 @@ class Database():
         return litter_summary 
 
     def detected_litter_per_day(self, from_date, to_date):
-        query = QSqlQuery()
-        query.prepare("SELECT dateTime, COUNT(*) as count FROM objects WHERE dateTime BETWEEN :from_date AND :to_date GROUP BY substr(dateTime, 1, 10)")
+        query = QSqlQuery(self.db)
+        query.prepare(
+            """
+            SELECT dateTime, 
+                COUNT(*) as count 
+            FROM objects 
+            WHERE dateTime 
+            BETWEEN :from_date AND :to_date 
+            GROUP BY substr(dateTime, 1, 10)
+            """
+            )
         query.bindValue(":from_date", from_date)
         query.bindValue(":to_date", to_date)
         query.exec()
@@ -248,8 +292,17 @@ class Database():
         return result
     
     def count_class_names(self, from_date, to_date):
-        query = QSqlQuery()
-        query.prepare("SELECT className, COUNT(*) as count FROM objects WHERE dateTime BETWEEN :from_date AND :to_date GROUP BY className")
+        query = QSqlQuery(self.db)
+        query.prepare(
+            """
+            SELECT className, 
+                COUNT(*) as count 
+            FROM objects 
+            WHERE dateTime 
+            BETWEEN :from_date AND :to_date 
+            GROUP BY className
+            """
+            )
         query.bindValue(":from_date", from_date)
         query.bindValue(":to_date", to_date)
         query.exec()
@@ -266,8 +319,16 @@ class Database():
         # First, get the total count of objects within the date range
         total_count = self.count_rows_by_date_range(from_date, to_date)
 
-        query = QSqlQuery()
-        query.prepare("SELECT className, COUNT(*) as count FROM objects WHERE dateTime BETWEEN :from_date AND :to_date GROUP BY className")
+        query = QSqlQuery(self.db)
+        query.prepare(
+            """SELECT className, 
+                COUNT(*) as count 
+            FROM objects 
+            WHERE dateTime 
+            BETWEEN :from_date AND :to_date 
+            GROUP BY className
+            """
+            )
         query.bindValue(":from_date", from_date)
         query.bindValue(":to_date", to_date)
         query.exec()

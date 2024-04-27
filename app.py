@@ -22,6 +22,9 @@ class VideoWorker(QObject):
     def __init__(self, capture, model_index, conf, iou, models, maxID, is_recording=False):
         super().__init__()
         self.capture = capture
+        # self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        # self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
         self.model_index = model_index
         self.conf = conf
         self.iou = iou
@@ -86,7 +89,7 @@ class VideoWorker(QObject):
 
                             maxID = self.maxID + object_id
 
-                            with Database() as database:
+                            with Database("insertObject") as database:
                                 database.insertObject(objectID=maxID, className=object_name, confidenceLevel=object_conf, recyclableBool=recyclableBool, dateTime=formattedDateTimeNow)
 
                                 # database.selectAllObjects()
@@ -103,7 +106,7 @@ class VideoWorker(QObject):
                 font_thickness = 1
                 text_color = (0, 0, 255)
                 text_size, _ = cv2.getTextSize("FPS: {:.2f}".format(fps), font, font_scale, font_thickness)
-                text_origin = (frame.shape[1] - text_size[0] - 10, 30) 
+                text_origin = (frame.shape[1] - text_size[0] - 10, text_size[1] + 30) 
 
                 cv2.putText(frame, "FPS: {:.2f}".format(fps), text_origin, font, font_scale, text_color, font_thickness)
 
@@ -113,7 +116,7 @@ class VideoWorker(QObject):
 
                 if self.is_recording:
                     font = cv2.FONT_HERSHEY_SIMPLEX
-                    font_scale = 0.5  # Adjust font size as needed
+                    font_scale = 0.5
                     font_thickness = 1
                     text_color = (255, 0, 0)
                     text = "RECORDING"
@@ -194,6 +197,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.updateDateEdits()
 
+        self.fromDateEdit.dateChanged.connect(self.updateToDateMinimum)
+
         self.runInference()
 
     def getAvailableCameras(self):
@@ -209,7 +214,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 cap.release()
             i += 1
             
-        available_cameras.append('rtsp://TAPOC200:TapoC200!@192.168.1.18:554/stream1')
+        available_cameras.append('rtsp://TAPOC200:TapoC200!@192.168.137.18:554/stream1')
         return available_cameras
 
     def getAvailableModels(self):
@@ -289,7 +294,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.totalObjectsDetectedNumber.setText(str(total_objects))
 
         # Check alerts and display alertDialogBox if necessary
-        with Database() as database:
+        with Database("selectAllAlerts") as database:
             alerts = database.selectAllAlerts()
             for item_name, alert_amount in alerts:
                 if item_name == "All Classes":
@@ -323,12 +328,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.StartRecordButton.setText("Stop Recording")  # Update button text
 
     def maxIDFromDatabase(self):
-        with Database() as database:
+        with Database("selectMaxID") as database:
             self.max_id = database.selectMaxID()
         return self.max_id
 
     def updateDateEdits(self):
-        with Database() as database:
+        with Database("updateDateEdits") as database:
 
             # Retrieve the earliest and latest dates
             earliest_date_str, latest_date_str = database.updateDateEdits()
@@ -348,14 +353,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.toDateEdit.setMaximumDate(latest_date)
                 self.toDateEdit.setMinimumDate(earliest_date)
 
+    def updateToDateMinimum(self):
+        # Set the minimum date of toDateEdit to the selected date of fromDateEdit
+        self.toDateEdit.setMinimumDate(self.fromDateEdit.date())
+
     def clickedFilterButton(self):
-        with Database() as database:
+        with Database("clickedFilterButton") as database:
             from_date = self.fromDateEdit.date().toString("MM-dd-yyyy")
             to_date = self.toDateEdit.date().addDays(1).toString("MM-dd-yyyy")
 
             # Calculate days between dates
-            from_date_obj = datetime.datetime.strptime(from_date, "%M-%d-%Y").date()
-            to_date_obj = datetime.datetime.strptime(to_date, "%M-%d-%Y").date()
+            from_date_obj = datetime.datetime.strptime(from_date, "%m-%d-%Y").date()
+            to_date_obj = datetime.datetime.strptime(to_date, "%m-%d-%Y").date()
             num_days = (to_date_obj - from_date_obj).days
 
             total_litter_count = database.count_rows_by_date_range(from_date, to_date)
@@ -505,7 +514,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         canvas.draw()  # Draw the chart on the canvas
 
     def alertDialogBox(self, className, alertAmount):
-        print(self.alert_dialog_shown)
         if not self.alert_dialog_shown:
             self.alert_dialog_shown = True
             dlg = QMessageBox(self)
@@ -584,7 +592,7 @@ class setAlertDialog(Ui_setAlertDialog, QDialog):
         self.names = names if names is not None else {}
 
         # Populate the comboBox with the values from the names dictionary
-        with Database() as database:
+        with Database("selectAllAlerts") as database:
             alerts = database.selectAllAlerts()
             existing_items = set(item_name for item_name, _ in alerts)
 
@@ -601,23 +609,15 @@ class setAlertDialog(Ui_setAlertDialog, QDialog):
         self.populate_rows_from_database()
         
     def save_to_database(self, item_name, amount):
-        with Database() as database:
-            print("INSERT")
+        with Database("insertAlert") as database:
             database.insertAlert(item_name, int(amount))
 
-            print("SELECTALL")
-            print(database.selectAllAlerts())
-
     def remove_from_database(self, item_name):
-        with Database() as database:
-            print("REMOVE")
+        with Database("removeAlert") as database:
             database.removeAlert(item_name)
 
-            print("SELECTALL")
-            print(database.selectAllAlerts())
-
     def populate_rows_from_database(self):
-        with Database() as database:
+        with Database("selectAllAlerts") as database:
             alerts = database.selectAllAlerts()
             for item_name, amount in alerts:
                 self.add_row(item_name, amount)

@@ -231,6 +231,7 @@ class Ui_MainWindow(object):
         self.topFrameLeftLayout_2.setContentsMargins(-1, -1, 0, -1)
         self.fromDateEdit = QDateEdit(self.topFrame)
         self.fromDateEdit.setObjectName(u"fromDateEdit")
+        self.fromDateEdit.setDisplayFormat("MM-dd-yyyy")
         sizePolicy.setHeightForWidth(self.fromDateEdit.sizePolicy().hasHeightForWidth())
         self.fromDateEdit.setSizePolicy(sizePolicy)
         self.fromDateEdit.setMinimumSize(QSize(0, 0))
@@ -257,6 +258,7 @@ class Ui_MainWindow(object):
 
         self.toDateEdit = QDateEdit(self.topFrame)
         self.toDateEdit.setObjectName(u"toDateEdit")
+        self.toDateEdit.setDisplayFormat("MM-dd-yyyy")
         sizePolicy.setHeightForWidth(self.toDateEdit.sizePolicy().hasHeightForWidth())
         self.toDateEdit.setSizePolicy(sizePolicy)
         self.toDateEdit.setCalendarPopup(True)
