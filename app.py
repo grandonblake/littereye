@@ -1,6 +1,6 @@
 from PySide6.QtCore import (QDate, QObject, Qt)
 from PySide6.QtGui import (QImage, QPixmap)
-from PySide6.QtWidgets import (QMainWindow, QDialog, QMessageBox)
+from PySide6.QtWidgets import (QMainWindow, QDialog, QMessageBox, QFileDialog)
 
 from PySide6 import QtWidgets
 
@@ -14,6 +14,10 @@ from database import Database
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from  matplotlib import rcParams
+
+from openpyxl import Workbook
+from openpyxl.drawing.image import Image
+from openpyxl.styles import Font
 
 class VideoWorker(QObject):
     imageUpdated = Signal(QImage)
@@ -199,6 +203,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.fromDateEdit.dateChanged.connect(self.updateToDateMinimum)
 
+        self.dailyRadioButton.toggled.connect(self.radioButtonToggled)
+        self.hourlyRadioButton.toggled.connect(self.radioButtonToggled)
+
+        self.downloadReportButton.clicked.connect(self.exportToExcel)
+
         self.runInference()
 
     def getAvailableCameras(self):
@@ -357,24 +366,39 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Set the minimum date of toDateEdit to the selected date of fromDateEdit
         self.toDateEdit.setMinimumDate(self.fromDateEdit.date())
 
+    def radioButtonToggled(self):
+        if self.dailyRadioButton.isChecked():
+            self.toDateEdit.setVisible(True)
+            self.dateEditMinusLabel.setVisible(True)
+            self.label_3.setText("Average Daily Detected Litter")
+        elif self.hourlyRadioButton.isChecked():
+            self.toDateEdit.setVisible(False)
+            self.dateEditMinusLabel.setVisible(False)
+            self.label_3.setText("Average Hourly Detected Litter")
+
     def clickedFilterButton(self):
         with Database("clickedFilterButton") as database:
             from_date = self.fromDateEdit.date().toString("MM-dd-yyyy")
-            to_date = self.toDateEdit.date().addDays(1).toString("MM-dd-yyyy")
-
-            # Calculate days between dates
-            from_date_obj = datetime.datetime.strptime(from_date, "%m-%d-%Y").date()
-            to_date_obj = datetime.datetime.strptime(to_date, "%m-%d-%Y").date()
-            num_days = (to_date_obj - from_date_obj).days
+            to_date = self.toDateEdit.date().addDays(1).toString("MM-dd-yyyy") if self.dailyRadioButton.isChecked() else self.fromDateEdit.date().addDays(1).toString("MM-dd-yyyy")
 
             total_litter_count = database.count_rows_by_date_range(from_date, to_date)
             self.totalDetectedLitterLabel.setText(f"{total_litter_count}")
 
-            if num_days > 0:  # Prevent division by zero
-                average_daily_litter_count = total_litter_count / num_days
-                self.averageDailyDetectedLitterLabel.setText(f"{average_daily_litter_count:.2f}")  # Format to 2 decimal places
-            else:
-                self.averageDailyDetectedLitterLabel.setText("Invalid date range")
+            if self.dailyRadioButton.isChecked():
+                # Calculate days between dates
+                from_date_obj = datetime.datetime.strptime(from_date, "%m-%d-%Y").date()
+                to_date_obj = datetime.datetime.strptime(to_date, "%m-%d-%Y").date()
+                num_days = (to_date_obj - from_date_obj).days
+
+                if num_days > 0:  # Prevent division by zero
+                    average_daily_litter_count = total_litter_count / num_days
+                    self.averageDailyDetectedLitterLabel.setText(f"{average_daily_litter_count:.2f}")  # Format to 2 decimal places
+                else:
+                    self.averageDailyDetectedLitterLabel.setText("Invalid date range")
+            elif self.hourlyRadioButton.isChecked():
+                # Assume 24 hours in a day
+                average_hourly_litter_count = total_litter_count / 24
+                self.averageDailyDetectedLitterLabel.setText(f"{average_hourly_litter_count:.2f}")  # Format to 2 decimal places
 
             litter_data = database.litter_composition(from_date, to_date)
             self.totalRecyclableLitterLabel.setText(f"{litter_data['recyclable_percentage']:.2f}%")
@@ -382,51 +406,93 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             recyclable_summary = database.litter_summary(from_date, to_date, True)
             self.recyclableLitterListWidget.clear()
+            if recyclable_summary:
+                for item in recyclable_summary:
+                    display_text = f"{item['className']} - {item['count']}"
+                    self.recyclableLitterListWidget.addItem(display_text)
+
             non_recyclable_summary = database.litter_summary(from_date, to_date, False)
-            self.nonRecyclableLitterListWidget.clear()  # Clear the list widget
+            self.nonRecyclableLitterListWidget.clear()
+            if non_recyclable_summary:
+                for item in non_recyclable_summary:
+                    display_text = f"{item['className']} - {item['count']}"
+                    self.nonRecyclableLitterListWidget.addItem(display_text)
 
-            for item in recyclable_summary:
-                display_text = f"{item['className']} - {item['count']}"
-                self.recyclableLitterListWidget.addItem(display_text)
-
-            for item in non_recyclable_summary:
-                display_text = f"{item['className']} - {item['count']}"
-                self.nonRecyclableLitterListWidget.addItem(display_text)
-
-            litter_data_per_day = database.detected_litter_per_day(from_date, to_date)
-            self.createLineChart(litter_data_per_day)
+            litter_data_per_day = database.detected_litter_per_day(from_date, to_date, self.hourlyRadioButton.isChecked())
+            if litter_data_per_day:
+                self.createLineChart(litter_data_per_day)
+            else:
+                self.clearLineChart()
 
             count_per_class = database.count_class_names(from_date, to_date)
-            self.createBarChart(count_per_class)
+            if count_per_class:
+                self.createBarChart(count_per_class)
+            else:
+                self.clearBarChart()
 
             percentage_per_class = database.get_class_percentages(from_date, to_date)
-            self.createPieChart(percentage_per_class)
+            if percentage_per_class:
+                self.createPieChart(percentage_per_class)
+            else:
+                self.clearPieChart()
 
-    def createLineChart(self, litter_data_per_day):
+    def clearLineChart(self):
+        for i in reversed(range(self.lineChartGridLayout.count())):
+            self.lineChartGridLayout.itemAt(i).widget().setParent(None)
+
+    def clearBarChart(self):
+        for i in reversed(range(self.barChartGridLayout.count())):
+            self.barChartGridLayout.itemAt(i).widget().setParent(None)
+
+    def clearPieChart(self):
+        for i in reversed(range(self.pieChartGridLayout.count())):
+            self.pieChartGridLayout.itemAt(i).widget().setParent(None)
+
+    def createLineChart(self, litter_data):
         # Process the data for the chart
-        dates = [item['date'] for item in litter_data_per_day]
-        counts = [int(item['count']) for item in litter_data_per_day]
+        if self.dailyRadioButton.isChecked():
+            x_values = [item['date'] for item in litter_data]
+            x_label = 'Date'
+            title = 'Detected Litter per Day'
+        else:
+            x_values = [item['hour'] for item in litter_data]
+            x_label = 'Hour'
+            title = 'Detected Litter per Hour'
+
+        # Aggregate the counts for each hour
+        counts = {}
+        for item in litter_data:
+            if self.hourlyRadioButton.isChecked():
+                hour = item['hour']
+            else:
+                hour = item['date']
+            count = int(item['count'])
+            if hour not in counts:
+                counts[hour] = 0
+            counts[hour] += count
+
+        y_values = list(counts.values())
 
         # Create the Matplotlib figure and axes
-        fig = Figure()
-        ax = fig.add_subplot(111)  
+        self.lineChartFigure = Figure()
+        ax = self.lineChartFigure.add_subplot(111)
 
         # Create the line chart
-        ax.plot(dates, counts)
+        ax.plot(x_values, y_values)
 
         # Customize the chart
-        ax.set_xlabel('Date')
+        ax.set_xlabel(x_label)
         ax.set_ylabel('Detected Litter Count')
-        ax.set_title('Detected Litter per Day')
+        ax.set_title(title)
 
         # Adjust font size based on figure size
-        rcParams.update({'font.size': max(10, min(fig.get_size_inches()))})
+        rcParams.update({'font.size': max(10, min(self.lineChartFigure.get_size_inches()))})
 
         # Adjust layout to fit the frame
-        fig.tight_layout()
+        self.lineChartFigure.tight_layout()
 
         # Create a canvas widget to embed the chart
-        canvas = FigureCanvas(fig)
+        canvas = FigureCanvas(self.lineChartFigure)
 
         # Clear previous content (if any) in the frame
         for i in reversed(range(self.lineChartGridLayout.count())):
@@ -442,8 +508,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         counts = [int(list(item.values())[0]) for item in count_per_class]
 
         # Create the Matplotlib figure and axes
-        fig = Figure()
-        ax = fig.add_subplot(111)  
+        self.barChartFigure = Figure()
+        ax = self.barChartFigure.add_subplot(111)  
 
         # Create the bar chart
         ax.bar(class_names, counts)
@@ -455,13 +521,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ax.set_xticklabels(class_names, rotation=45)
 
         # Adjust font size based on figure size
-        rcParams.update({'font.size': max(10, min(fig.get_size_inches()))})
+        rcParams.update({'font.size': max(10, min(self.barChartFigure.get_size_inches()))})
 
         # Adjust layout to fit the frame
-        fig.tight_layout()
+        self.barChartFigure.tight_layout()
 
         # Create a canvas widget to embed the chart
-        canvas = FigureCanvas(fig)
+        canvas = FigureCanvas(self.barChartFigure)
 
         # Clear previous content (if any) in the frame
         for i in reversed(range(self.barChartGridLayout.count())):
@@ -477,8 +543,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         percentages = [float(list(item.values())[0].replace('%', '')) for item in percentage_per_class]
 
         # Create the Matplotlib figure and axes
-        fig = Figure()
-        ax = fig.add_subplot(111)  
+        self.pieChartFigure = Figure()
+        ax = self.pieChartFigure.add_subplot(111)  
 
         def label_function(val):
             return '' if val < 3 else f'{val:.1f}%'  # Omits labels for small percentages
@@ -497,13 +563,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ax.set_title('Percentage per Class')
 
         # Adjust font size based on figure size
-        rcParams.update({'font.size': max(10, min(fig.get_size_inches()))})
+        rcParams.update({'font.size': max(10, min(self.pieChartFigure.get_size_inches()))})
 
         # Adjust layout to fit the frame
-        fig.tight_layout()
+        self.pieChartFigure.tight_layout()
 
         # Create a canvas widget to embed the chart
-        canvas = FigureCanvas(fig)
+        canvas = FigureCanvas(self.pieChartFigure)
 
         # Clear previous content (if any) in the frame
         for i in reversed(range(self.pieChartGridLayout.count())):
@@ -513,6 +579,146 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pieChartGridLayout.addWidget(canvas)  # Assuming you want to place it at the top
         canvas.draw()  # Draw the chart on the canvas
 
+    def exportToExcel(self):
+        with Database("exportToExcel") as database:
+            from_date = self.fromDateEdit.date().toString("MM-dd-yyyy")
+            to_date = self.toDateEdit.date().addDays(1).toString("MM-dd-yyyy") if self.dailyRadioButton.isChecked() else self.fromDateEdit.date().addDays(1).toString("MM-dd-yyyy")
+
+            total_litter_count = database.count_rows_by_date_range(from_date, to_date)
+
+            if total_litter_count == 0:
+                QMessageBox.warning(self, "No Data to Export", "There is no data to export for the selected date range.")
+                return
+
+            if self.dailyRadioButton.isChecked():
+                from_date_obj = datetime.datetime.strptime(from_date, "%m-%d-%Y").date()
+                to_date_obj = datetime.datetime.strptime(to_date, "%m-%d-%Y").date()
+                num_days = (to_date_obj - from_date_obj).days
+                average_daily_litter_count = total_litter_count / num_days if num_days > 0 else 0
+            else:
+                average_hourly_litter_count = total_litter_count / 24
+
+            litter_data = database.litter_composition(from_date, to_date)
+            recyclable_summary = database.litter_summary(from_date, to_date, True)
+            non_recyclable_summary = database.litter_summary(from_date, to_date, False)
+            litter_data_per_day = database.detected_litter_per_day(from_date, to_date, self.hourlyRadioButton.isChecked())
+            count_per_class = database.count_class_names(from_date, to_date)
+            percentage_per_class = database.get_class_percentages(from_date, to_date)
+
+            # Create a new workbook and select the active sheet
+            workbook = Workbook()
+            sheet = workbook.active
+
+            # Write the data to the sheet
+            bold_font = Font(bold=True)
+
+            sheet.cell(row=1, column=1, value="From Date").font = bold_font
+            sheet.cell(row=1, column=2, value=from_date)
+
+            if self.dailyRadioButton.isChecked():
+                sheet.cell(row=2, column=1, value="To Date").font = bold_font
+                sheet.cell(row=2, column=2, value=to_date)
+
+            sheet.cell(row=4, column=1, value="Total Detected Litter").font = bold_font
+            sheet.cell(row=5, column=1, value=total_litter_count)
+
+            if self.dailyRadioButton.isChecked():
+                sheet.cell(row=6, column=1, value="Average Daily Detected Litter").font = bold_font
+                sheet.cell(row=7, column=1, value=average_daily_litter_count)
+            else:
+                sheet.cell(row=6, column=1, value="Average Hourly Detected Litter").font = bold_font
+                sheet.cell(row=7, column=1, value=average_hourly_litter_count)
+
+            sheet.cell(row=8, column=1, value="Total Recyclable Litter (%)").font = bold_font
+            sheet.cell(row=9, column=1, value=f"{litter_data['recyclable_percentage']:.2f}%")
+            sheet.cell(row=10, column=1, value="Total Non-Recyclable Litter (%)").font = bold_font
+            sheet.cell(row=11, column=1, value=f"{litter_data['non_recyclable_percentage']:.2f}%")
+
+            sheet.cell(row=13, column=1, value="Recyclable Litter").font = bold_font
+            for i, item in enumerate(recyclable_summary, start=14):
+                sheet.cell(row=i, column=1, value=f"{item['className']} - {item['count']}")
+
+            sheet.cell(row=13, column=2, value="Non-Recyclable Litter").font = bold_font
+            for i, item in enumerate(non_recyclable_summary, start=14):
+                sheet.cell(row=i, column=2, value=f"{item['className']} - {item['count']}")
+
+            # Write the chart data to the sheet
+            detected_litter_row = 1
+            sheet.cell(row=detected_litter_row, column=7, value="Detected Litter per Day").font = bold_font
+            for i, item in enumerate(litter_data_per_day, start=detected_litter_row + 1):
+                sheet.cell(row=i, column=7, value=item['date'] if self.dailyRadioButton.isChecked() else item['hour'])
+                sheet.cell(row=i, column=8, value=item['count'])
+
+            count_per_class_row = detected_litter_row + len(litter_data_per_day) + 3
+            sheet.cell(row=count_per_class_row, column=7, value="Count per Class").font = bold_font
+            for i, item in enumerate(count_per_class, start=count_per_class_row + 1):
+                class_name = list(item.keys())[0]
+                count = list(item.values())[0]
+                sheet.cell(row=i, column=7, value=class_name)
+                sheet.cell(row=i, column=8, value=count)
+
+            percentage_per_class_row = count_per_class_row + len(count_per_class) + 3
+            sheet.cell(row=percentage_per_class_row, column=7, value="Percentage per Class").font = bold_font
+            for i, item in enumerate(percentage_per_class, start=percentage_per_class_row + 1):
+                class_name = list(item.keys())[0]
+                percentage = list(item.values())[0]
+                sheet.cell(row=i, column=7, value=class_name)
+                sheet.cell(row=i, column=8, value=percentage)
+
+            # Adjust column widths to fit the contents
+            for column_cells in sheet.columns:
+                length = max(len(str(cell.value)) for cell in column_cells)
+                sheet.column_dimensions[column_cells[0].column_letter].width = length + 2
+
+            # Save the line chart as an image
+            line_chart_path = "line_chart.png"
+            if hasattr(self, 'lineChartFigure'):
+                self.lineChartFigure.savefig(line_chart_path)
+                line_chart_img = Image(line_chart_path)
+                sheet.add_image(line_chart_img, "J2")
+
+            # Save the bar chart as an image
+            bar_chart_path = "bar_chart.png"
+            if hasattr(self, 'barChartFigure'):
+                self.barChartFigure.savefig(bar_chart_path)
+                bar_chart_img = Image(bar_chart_path)
+                sheet.add_image(bar_chart_img, "J" + str(count_per_class_row))
+
+            # Save the pie chart as an image
+            pie_chart_path = "pie_chart.png"
+            if hasattr(self, 'pieChartFigure'):
+                self.pieChartFigure.savefig(pie_chart_path)
+                pie_chart_img = Image(pie_chart_path)
+                sheet.add_image(pie_chart_img, "J" + str(percentage_per_class_row))
+
+            # Create the "reports" folder if it doesn't exist
+            reports_folder = "reports"
+            if not os.path.exists(reports_folder):
+                os.makedirs(reports_folder)
+
+            # Generate a default file name based on the date range
+            if self.dailyRadioButton.isChecked():
+                default_file_name = f"litter_report_{from_date}_to_{to_date}.xlsx"
+            else:
+                default_file_name = f"litter_report_{from_date}.xlsx"
+            default_file_path = os.path.join(reports_folder, default_file_name)
+
+            # Save the workbook to a file
+            file_path, _ = QFileDialog.getSaveFileName(self, "Save Excel File", default_file_path, "Excel Files (*.xlsx)")
+            if file_path:
+                workbook.save(file_path)
+                QMessageBox.information(self, "Export Successful", "Data exported to Excel successfully.")
+            else:
+                QMessageBox.warning(self, "Export Cancelled", "Export to Excel cancelled.")
+
+            # Delete the temporary chart image files
+            if os.path.exists(line_chart_path):
+                os.remove(line_chart_path)
+            if os.path.exists(bar_chart_path):
+                os.remove(bar_chart_path)
+            if os.path.exists(pie_chart_path):
+                os.remove(pie_chart_path)
+                   
     def alertDialogBox(self, className, alertAmount):
         if not self.alert_dialog_shown:
             self.alert_dialog_shown = True

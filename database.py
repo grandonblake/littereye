@@ -185,32 +185,6 @@ class Database():
         query.next()
 
         return query.value(0)
-    
-    def average_daily_detected_litter(self, from_date, to_date):
-        query = QSqlQuery(self.db)
-        query.prepare(
-            """
-            SELECT SUM(count) as total_count, 
-                COUNT(DISTINCT DATE(dateTime)) as num_days 
-            FROM (SELECT COUNT(*) as count, DATE(dateTime) as date 
-                FROM objects 
-                WHERE dateTime 
-                BETWEEN :from_date AND :to_date 
-                GROUP BY date)
-            """
-            )
-        query.bindValue(":from_date", from_date)
-        query.bindValue(":to_date", to_date)
-        query.exec()
-        query.next() 
-
-        total_count = query.value(0)
-        num_days = query.value(1)
-
-        if num_days > 0:
-            return total_count / num_days
-        else:
-            return None  # Or handle the case of no data in the range
         
     def litter_composition(self, from_date, to_date):
         query = QSqlQuery(self.db)
@@ -239,7 +213,10 @@ class Database():
                 "non_recyclable_percentage": (non_recyclable_count / total_count) * 100
             }
         else:
-            return None  # Or handle the case of no data in the range
+            return {
+                "recyclable_percentage": 0,
+                "non_recyclable_percentage": 0
+            }
 
     def litter_summary(self, from_date, to_date, recyclable):
         query = QSqlQuery(self.db)
@@ -265,32 +242,50 @@ class Database():
 
         return litter_summary 
 
-    def detected_litter_per_day(self, from_date, to_date):
+    def detected_litter_per_day(self, from_date, to_date, hourly=False):
+        print("2")
+        if hourly:
+            group_by = "substr(dateTime, 12, 2)"
+        else:
+            group_by = "substr(dateTime, 1, 10)"
+
         query = QSqlQuery(self.db)
         query.prepare(
-            """
+            f"""
             SELECT dateTime, 
                 COUNT(*) as count 
             FROM objects 
             WHERE dateTime 
             BETWEEN :from_date AND :to_date 
-            GROUP BY substr(dateTime, 1, 10)
+            GROUP BY {group_by}
             """
-            )
+        )
         query.bindValue(":from_date", from_date)
         query.bindValue(":to_date", to_date)
         query.exec()
+
+        print("3")
 
         result = []
         while query.next():
             date_time = query.value(0)
             count = query.value(1)
-            date = date_time.split(" ")[0]  # Extract the date part from the dateTime string
-            date = "-".join(date.split("-")[:2])  # Omit the year
-            result.append({'date': date, 'count': str(count)})
+            if hourly:
+                hour = int(date_time.split(" ")[1].split("-")[0])  # Extract the hour part from the dateTime string
+                am_pm = "am" if hour < 12 else "pm"
+                hour = hour % 12
+                if hour == 0:
+                    hour = 12
+                result.append({'hour': f"{hour}:00{am_pm}", 'count': str(count)})
+            else:
+                date = date_time.split(" ")[0]  # Extract the date part from the dateTime string
+                date = "-".join(date.split("-")[:2])  # Omit the year
+                result.append({'date': date, 'count': str(count)})
+
+        print("4")
 
         return result
-    
+
     def count_class_names(self, from_date, to_date):
         query = QSqlQuery(self.db)
         query.prepare(
@@ -312,6 +307,9 @@ class Database():
             class_name = query.value(0)
             count = query.value(1)
             result.append({class_name: str(count)})
+
+        print("count_class_names")
+        print(result)
 
         return result
     
@@ -340,6 +338,9 @@ class Database():
             # Calculate the percentage and round it to 2 decimal places
             percentage = round((count / total_count) * 100, 2)
             result.append({class_name: str(percentage) + '%'})
+
+        print("get_class_percentages")
+        print(result)
 
         return result
 

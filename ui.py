@@ -1,7 +1,7 @@
 from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect, QSize, Qt)
 from PySide6.QtGui import (QBrush, QColor, QFont, QPalette)
 from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QListWidget, QPushButton, QSizePolicy, QAbstractSpinBox, QDateEdit, QScrollArea,
-    QStatusBar, QVBoxLayout, QWidget, QLayout, QSlider, QDialogButtonBox, QTabWidget, QListView, QLineEdit)
+    QStatusBar, QVBoxLayout, QWidget, QLayout, QSlider, QDialogButtonBox, QTabWidget, QListView, QLineEdit, QDateTimeEdit, QRadioButton, QSpacerItem)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -32,12 +32,19 @@ class Ui_MainWindow(object):
         self.leftLayout.setObjectName(u"leftLayout")
         self.topLeftFrame = QFrame(self.detectTab)
         self.topLeftFrame.setObjectName(u"topLeftFrame")
+        self.topLeftFrame.setAcceptDrops(False)
+        self.topLeftFrame.setAutoFillBackground(False)
         self.topLeftFrame.setFrameShape(QFrame.Panel)
         self.topLeftFrame.setFrameShadow(QFrame.Sunken)
+        self.topLeftFrame.setLineWidth(1)
         self.gridLayout_2 = QGridLayout(self.topLeftFrame)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.VideoWidget = QLabel(self.topLeftFrame)
         self.VideoWidget.setObjectName(u"VideoWidget")
+        self.VideoWidget.setAutoFillBackground(False)
+        self.VideoWidget.setStyleSheet(u"border: none;")
+        self.VideoWidget.setFrameShape(QFrame.NoFrame)
+        self.VideoWidget.setLineWidth(1)
         self.VideoWidget.setAlignment(Qt.AlignCenter)
 
         self.gridLayout_2.addWidget(self.VideoWidget, 0, 2, 1, 1)
@@ -65,7 +72,8 @@ class Ui_MainWindow(object):
         self.LitterEyeTitle = QLabel(self.rightFirstFrame)
         self.LitterEyeTitle.setObjectName(u"LitterEyeTitle")
         font1 = QFont()
-        font1.setPointSize(14)
+        font1.setFamilies([u"Century Schoolbook"])
+        font1.setPointSize(28)
         font1.setBold(True)
         self.LitterEyeTitle.setFont(font1)
         self.LitterEyeTitle.setAlignment(Qt.AlignCenter)
@@ -77,23 +85,27 @@ class Ui_MainWindow(object):
 
         self.rightSecondFrame = QFrame(self.rightFrame)
         self.rightSecondFrame.setObjectName(u"rightSecondFrame")
+        self.rightSecondFrame.setAutoFillBackground(False)
         self.rightSecondFrame.setFrameShape(QFrame.Panel)
         self.rightSecondFrame.setFrameShadow(QFrame.Sunken)
         self.verticalLayout_3 = QVBoxLayout(self.rightSecondFrame)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.totalObjectsDetectedTitle = QLabel(self.rightSecondFrame)
         self.totalObjectsDetectedTitle.setObjectName(u"totalObjectsDetectedTitle")
-        self.totalObjectsDetectedTitle.setFont(font1)
+        font2 = QFont()
+        font2.setPointSize(14)
+        font2.setBold(True)
+        self.totalObjectsDetectedTitle.setFont(font2)
         self.totalObjectsDetectedTitle.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_3.addWidget(self.totalObjectsDetectedTitle)
 
         self.totalObjectsDetectedNumber = QLabel(self.rightSecondFrame)
         self.totalObjectsDetectedNumber.setObjectName(u"totalObjectsDetectedNumber")
-        font2 = QFont()
-        font2.setPointSize(36)
-        font2.setBold(False)
-        self.totalObjectsDetectedNumber.setFont(font2)
+        font3 = QFont()
+        font3.setPointSize(48)
+        font3.setBold(False)
+        self.totalObjectsDetectedNumber.setFont(font3)
         self.totalObjectsDetectedNumber.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_3.addWidget(self.totalObjectsDetectedNumber)
@@ -109,13 +121,19 @@ class Ui_MainWindow(object):
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.detectedObjectsTitle = QLabel(self.rightThirdFrame)
         self.detectedObjectsTitle.setObjectName(u"detectedObjectsTitle")
-        self.detectedObjectsTitle.setFont(font1)
+        font4 = QFont()
+        font4.setPointSize(18)
+        font4.setBold(True)
+        self.detectedObjectsTitle.setFont(font4)
         self.detectedObjectsTitle.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_4.addWidget(self.detectedObjectsTitle)
 
         self.listWidget = QListWidget(self.rightThirdFrame)
         self.listWidget.setObjectName(u"listWidget")
+        font5 = QFont()
+        font5.setPointSize(12)
+        self.listWidget.setFont(font5)
 
         self.verticalLayout_4.addWidget(self.listWidget)
 
@@ -130,7 +148,10 @@ class Ui_MainWindow(object):
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
         self.CameraSettingsLabel = QLabel(self.rightFourthFrame)
         self.CameraSettingsLabel.setObjectName(u"CameraSettingsLabel")
-        self.CameraSettingsLabel.setFont(font1)
+        font6 = QFont()
+        font6.setPointSize(16)
+        font6.setBold(True)
+        self.CameraSettingsLabel.setFont(font6)
         self.CameraSettingsLabel.setScaledContents(False)
         self.CameraSettingsLabel.setAlignment(Qt.AlignCenter)
 
@@ -142,10 +163,10 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.setContentsMargins(0, 0, -1, -1)
         self.CameraSourceLabel = QLabel(self.rightFourthFrame)
         self.CameraSourceLabel.setObjectName(u"CameraSourceLabel")
-        font3 = QFont()
-        font3.setPointSize(10)
-        font3.setBold(False)
-        self.CameraSourceLabel.setFont(font3)
+        font7 = QFont()
+        font7.setPointSize(10)
+        font7.setBold(False)
+        self.CameraSourceLabel.setFont(font7)
 
         self.horizontalLayout_2.addWidget(self.CameraSourceLabel)
 
@@ -215,28 +236,45 @@ class Ui_MainWindow(object):
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.SummaryReportLabel = QLabel(self.topFrame)
         self.SummaryReportLabel.setObjectName(u"SummaryReportLabel")
-        font4 = QFont()
-        font4.setPointSize(26)
-        font4.setBold(True)
-        self.SummaryReportLabel.setFont(font4)
+        font8 = QFont()
+        font8.setPointSize(26)
+        font8.setBold(True)
+        self.SummaryReportLabel.setFont(font8)
 
         self.verticalLayout_7.addWidget(self.SummaryReportLabel)
 
         self.topFrameLayout = QHBoxLayout()
         self.topFrameLayout.setObjectName(u"topFrameLayout")
+        self.topFrameLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
         self.topFrameLeftLayout_2 = QHBoxLayout()
         self.topFrameLeftLayout_2.setSpacing(5)
         self.topFrameLeftLayout_2.setObjectName(u"topFrameLeftLayout_2")
         self.topFrameLeftLayout_2.setSizeConstraint(QLayout.SetMinAndMaxSize)
         self.topFrameLeftLayout_2.setContentsMargins(-1, -1, 0, -1)
+        self.dailyRadioButton = QRadioButton(self.topFrame)
+        self.dailyRadioButton.setObjectName(u"dailyRadioButton")
+        font9 = QFont()
+        font9.setPointSize(11)
+        self.dailyRadioButton.setFont(font9)
+        self.dailyRadioButton.setChecked(True)
+
+        self.topFrameLeftLayout_2.addWidget(self.dailyRadioButton)
+
+        self.hourlyRadioButton = QRadioButton(self.topFrame)
+        self.hourlyRadioButton.setObjectName(u"hourlyRadioButton")
+        self.hourlyRadioButton.setFont(font9)
+
+        self.topFrameLeftLayout_2.addWidget(self.hourlyRadioButton)
+
         self.fromDateEdit = QDateEdit(self.topFrame)
         self.fromDateEdit.setObjectName(u"fromDateEdit")
-        self.fromDateEdit.setDisplayFormat("MM-dd-yyyy")
         sizePolicy.setHeightForWidth(self.fromDateEdit.sizePolicy().hasHeightForWidth())
         self.fromDateEdit.setSizePolicy(sizePolicy)
         self.fromDateEdit.setMinimumSize(QSize(0, 0))
+        self.fromDateEdit.setFont(font9)
         self.fromDateEdit.setLayoutDirection(Qt.LeftToRight)
         self.fromDateEdit.setButtonSymbols(QAbstractSpinBox.UpDownArrows)
+        self.fromDateEdit.setCurrentSection(QDateTimeEdit.MonthSection)
         self.fromDateEdit.setCalendarPopup(True)
 
         self.topFrameLeftLayout_2.addWidget(self.fromDateEdit)
@@ -248,19 +286,19 @@ class Ui_MainWindow(object):
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.dateEditMinusLabel.sizePolicy().hasHeightForWidth())
         self.dateEditMinusLabel.setSizePolicy(sizePolicy1)
-        font5 = QFont()
-        font5.setPointSize(12)
-        font5.setBold(True)
-        self.dateEditMinusLabel.setFont(font5)
+        font10 = QFont()
+        font10.setPointSize(12)
+        font10.setBold(True)
+        self.dateEditMinusLabel.setFont(font10)
         self.dateEditMinusLabel.setAlignment(Qt.AlignCenter)
 
         self.topFrameLeftLayout_2.addWidget(self.dateEditMinusLabel)
 
         self.toDateEdit = QDateEdit(self.topFrame)
         self.toDateEdit.setObjectName(u"toDateEdit")
-        self.toDateEdit.setDisplayFormat("MM-dd-yyyy")
         sizePolicy.setHeightForWidth(self.toDateEdit.sizePolicy().hasHeightForWidth())
         self.toDateEdit.setSizePolicy(sizePolicy)
+        self.toDateEdit.setFont(font9)
         self.toDateEdit.setCalendarPopup(True)
 
         self.topFrameLeftLayout_2.addWidget(self.toDateEdit)
@@ -269,6 +307,7 @@ class Ui_MainWindow(object):
         self.filterButton.setObjectName(u"filterButton")
         sizePolicy1.setHeightForWidth(self.filterButton.sizePolicy().hasHeightForWidth())
         self.filterButton.setSizePolicy(sizePolicy1)
+        self.filterButton.setFont(font9)
 
         self.topFrameLeftLayout_2.addWidget(self.filterButton)
 
@@ -276,21 +315,31 @@ class Ui_MainWindow(object):
         self.topFrameLeftLayout_2.setStretch(1, 1)
         self.topFrameLeftLayout_2.setStretch(2, 1)
         self.topFrameLeftLayout_2.setStretch(3, 1)
+        self.topFrameLeftLayout_2.setStretch(4, 1)
+        self.topFrameLeftLayout_2.setStretch(5, 1)
 
         self.topFrameLayout.addLayout(self.topFrameLeftLayout_2)
 
         self.topFrameRightLayout = QHBoxLayout()
         self.topFrameRightLayout.setObjectName(u"topFrameRightLayout")
+        self.topFrameRightLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.topFrameRightLayout.addItem(self.horizontalSpacer)
+
         self.downloadReportButton = QPushButton(self.topFrame)
         self.downloadReportButton.setObjectName(u"downloadReportButton")
+        sizePolicy.setHeightForWidth(self.downloadReportButton.sizePolicy().hasHeightForWidth())
+        self.downloadReportButton.setSizePolicy(sizePolicy)
+        self.downloadReportButton.setLayoutDirection(Qt.LeftToRight)
 
-        self.topFrameRightLayout.addWidget(self.downloadReportButton, 0, Qt.AlignRight|Qt.AlignVCenter)
+        self.topFrameRightLayout.addWidget(self.downloadReportButton)
 
 
         self.topFrameLayout.addLayout(self.topFrameRightLayout)
 
-        self.topFrameLayout.setStretch(0, 3)
-        self.topFrameLayout.setStretch(1, 7)
+        self.topFrameLayout.setStretch(0, 4)
+        self.topFrameLayout.setStretch(1, 6)
 
         self.verticalLayout_7.addLayout(self.topFrameLayout)
 
@@ -316,20 +365,18 @@ class Ui_MainWindow(object):
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
         self.label = QLabel(self.centerLeftFrame)
         self.label.setObjectName(u"label")
-        font6 = QFont()
-        font6.setPointSize(11)
-        font6.setBold(True)
-        self.label.setFont(font6)
+        self.label.setFont(font10)
         self.label.setAlignment(Qt.AlignCenter)
+        self.label.setWordWrap(False)
 
         self.verticalLayout_8.addWidget(self.label)
 
         self.totalDetectedLitterLabel = QLabel(self.centerLeftFrame)
         self.totalDetectedLitterLabel.setObjectName(u"totalDetectedLitterLabel")
-        font7 = QFont()
-        font7.setPointSize(16)
-        font7.setBold(False)
-        self.totalDetectedLitterLabel.setFont(font7)
+        font11 = QFont()
+        font11.setPointSize(18)
+        font11.setBold(False)
+        self.totalDetectedLitterLabel.setFont(font11)
         self.totalDetectedLitterLabel.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_8.addWidget(self.totalDetectedLitterLabel)
@@ -343,14 +390,15 @@ class Ui_MainWindow(object):
         self.verticalLayout_9.setObjectName(u"verticalLayout_9")
         self.label_3 = QLabel(self.centerLeftFrame)
         self.label_3.setObjectName(u"label_3")
-        self.label_3.setFont(font6)
+        self.label_3.setFont(font10)
         self.label_3.setAlignment(Qt.AlignCenter)
+        self.label_3.setWordWrap(False)
 
         self.verticalLayout_9.addWidget(self.label_3)
 
         self.averageDailyDetectedLitterLabel = QLabel(self.centerLeftFrame)
         self.averageDailyDetectedLitterLabel.setObjectName(u"averageDailyDetectedLitterLabel")
-        self.averageDailyDetectedLitterLabel.setFont(font7)
+        self.averageDailyDetectedLitterLabel.setFont(font11)
         self.averageDailyDetectedLitterLabel.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_9.addWidget(self.averageDailyDetectedLitterLabel)
@@ -364,14 +412,15 @@ class Ui_MainWindow(object):
         self.verticalLayout_10.setObjectName(u"verticalLayout_10")
         self.label_4 = QLabel(self.centerLeftFrame)
         self.label_4.setObjectName(u"label_4")
-        self.label_4.setFont(font6)
+        self.label_4.setFont(font10)
         self.label_4.setAlignment(Qt.AlignCenter)
+        self.label_4.setWordWrap(False)
 
         self.verticalLayout_10.addWidget(self.label_4)
 
         self.totalRecyclableLitterLabel = QLabel(self.centerLeftFrame)
         self.totalRecyclableLitterLabel.setObjectName(u"totalRecyclableLitterLabel")
-        self.totalRecyclableLitterLabel.setFont(font7)
+        self.totalRecyclableLitterLabel.setFont(font11)
         self.totalRecyclableLitterLabel.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_10.addWidget(self.totalRecyclableLitterLabel)
@@ -385,14 +434,17 @@ class Ui_MainWindow(object):
         self.verticalLayout_11.setObjectName(u"verticalLayout_11")
         self.label_6 = QLabel(self.centerLeftFrame)
         self.label_6.setObjectName(u"label_6")
-        self.label_6.setFont(font6)
+        self.label_6.setFont(font10)
+        self.label_6.setLineWidth(1)
+        self.label_6.setScaledContents(False)
         self.label_6.setAlignment(Qt.AlignCenter)
+        self.label_6.setWordWrap(False)
 
         self.verticalLayout_11.addWidget(self.label_6)
 
         self.totalNonRecyclableLitterLabel = QLabel(self.centerLeftFrame)
         self.totalNonRecyclableLitterLabel.setObjectName(u"totalNonRecyclableLitterLabel")
-        self.totalNonRecyclableLitterLabel.setFont(font7)
+        self.totalNonRecyclableLitterLabel.setFont(font11)
         self.totalNonRecyclableLitterLabel.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_11.addWidget(self.totalNonRecyclableLitterLabel)
@@ -419,16 +471,22 @@ class Ui_MainWindow(object):
         self.verticalLayout_13.setObjectName(u"verticalLayout_13")
         self.label_9 = QLabel(self.centerCenterFrame)
         self.label_9.setObjectName(u"label_9")
-        self.label_9.setFont(font6)
+        self.label_9.setFont(font10)
         self.label_9.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_13.addWidget(self.label_9)
 
         self.recyclableLitterListWidget = QListWidget(self.centerCenterFrame)
         self.recyclableLitterListWidget.setObjectName(u"recyclableLitterListWidget")
+        font12 = QFont()
+        font12.setFamilies([u"Segoe UI Light"])
+        font12.setPointSize(12)
+        self.recyclableLitterListWidget.setFont(font12)
         self.recyclableLitterListWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.recyclableLitterListWidget.setProperty("isWrapping", False)
         self.recyclableLitterListWidget.setLayoutMode(QListView.SinglePass)
         self.recyclableLitterListWidget.setModelColumn(0)
+        self.recyclableLitterListWidget.setWordWrap(True)
 
         self.verticalLayout_13.addWidget(self.recyclableLitterListWidget)
 
@@ -441,17 +499,17 @@ class Ui_MainWindow(object):
         self.verticalLayout_14.setObjectName(u"verticalLayout_14")
         self.label_10 = QLabel(self.centerCenterFrame)
         self.label_10.setObjectName(u"label_10")
-        font8 = QFont()
-        font8.setPointSize(10)
-        font8.setBold(True)
-        self.label_10.setFont(font8)
+        self.label_10.setFont(font10)
         self.label_10.setAlignment(Qt.AlignCenter)
 
         self.verticalLayout_14.addWidget(self.label_10)
 
         self.nonRecyclableLitterListWidget = QListWidget(self.centerCenterFrame)
         self.nonRecyclableLitterListWidget.setObjectName(u"nonRecyclableLitterListWidget")
+        self.nonRecyclableLitterListWidget.setFont(font12)
         self.nonRecyclableLitterListWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.nonRecyclableLitterListWidget.setProperty("isWrapping", False)
+        self.nonRecyclableLitterListWidget.setWordWrap(True)
 
         self.verticalLayout_14.addWidget(self.nonRecyclableLitterListWidget)
 
@@ -476,8 +534,8 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.lineChartFrame)
 
-        self.horizontalLayout.setStretch(0, 2)
-        self.horizontalLayout.setStretch(1, 2)
+        self.horizontalLayout.setStretch(0, 1)
+        self.horizontalLayout.setStretch(1, 3)
         self.horizontalLayout.setStretch(2, 6)
 
         self.verticalLayout_6.addWidget(self.centerFrame)
@@ -536,7 +594,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.VideoWidget.setText("")
-        self.LitterEyeTitle.setText(QCoreApplication.translate("MainWindow", u"LitterEye v1", None))
+        self.LitterEyeTitle.setText(QCoreApplication.translate("MainWindow", u"LitterEye", None))
         self.totalObjectsDetectedTitle.setText(QCoreApplication.translate("MainWindow", u"Total Objects Detected", None))
         self.totalObjectsDetectedNumber.setText(QCoreApplication.translate("MainWindow", u"0", None))
         self.detectedObjectsTitle.setText(QCoreApplication.translate("MainWindow", u"Detected Objects", None))
@@ -547,6 +605,8 @@ class Ui_MainWindow(object):
         self.advancedSettingsButton.setText(QCoreApplication.translate("MainWindow", u"Advanced Settings", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.detectTab), QCoreApplication.translate("MainWindow", u"Detect", None))
         self.SummaryReportLabel.setText(QCoreApplication.translate("MainWindow", u"Summary Report", None))
+        self.dailyRadioButton.setText(QCoreApplication.translate("MainWindow", u"Daily", None))
+        self.hourlyRadioButton.setText(QCoreApplication.translate("MainWindow", u"Hourly", None))
         self.dateEditMinusLabel.setText(QCoreApplication.translate("MainWindow", u"-", None))
         self.filterButton.setText(QCoreApplication.translate("MainWindow", u"Filter", None))
         self.downloadReportButton.setText(QCoreApplication.translate("MainWindow", u"Download Report", None))
@@ -562,7 +622,7 @@ class Ui_MainWindow(object):
         self.label_10.setText(QCoreApplication.translate("MainWindow", u"Non-Recyclable Litter", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.reportTab), QCoreApplication.translate("MainWindow", u"Report", None))
     # retranslateUi
-        
+
 class Ui_settingsDialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():
@@ -746,12 +806,12 @@ class Ui_settingsDialog(object):
         QMetaObject.connectSlotsByName(Dialog)
     
     def retranslateUi(self, Dialog):
-        Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Dialog", None))
-        self.AIModelLabel.setText(QCoreApplication.translate("Dialog", u"AI Model", None))
-        self.ConfidenceThresholdLabel.setText(QCoreApplication.translate("Dialog", u"Confidence Threshold", None))
-        self.ConfidenceThresholdNumber.setText(QCoreApplication.translate("Dialog", u"0", None))
-        self.IoUThresholdLabel.setText(QCoreApplication.translate("Dialog", u"IoU Threshold", None))
-        self.IoUThresholdNumber.setText(QCoreApplication.translate("Dialog", u"0", None))
+        Dialog.setWindowTitle(QCoreApplication.translate("Advanced Settings", u"Advanced Settings", None))
+        self.AIModelLabel.setText(QCoreApplication.translate("Advanced Settings", u"AI Model", None))
+        self.ConfidenceThresholdLabel.setText(QCoreApplication.translate("Advanced Settings", u"Confidence Threshold", None))
+        self.ConfidenceThresholdNumber.setText(QCoreApplication.translate("Advanced Settings", u"0", None))
+        self.IoUThresholdLabel.setText(QCoreApplication.translate("Advanced Settings", u"IoU Threshold", None))
+        self.IoUThresholdNumber.setText(QCoreApplication.translate("Advanced Settings", u"0", None))
     
 class Ui_setAlertDialog(object):
     def setupUi(self, Dialog):
