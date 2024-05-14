@@ -536,7 +536,7 @@
               </layout>
              </item>
              <item>
-              <layout class="QHBoxLayout" name="topFrameRightLayout" stretch="0,0">
+              <layout class="QHBoxLayout" name="topFrameRightLayout" stretch="0,0,0">
                <property name="sizeConstraint">
                 <enum>QLayout::SetDefaultConstraint</enum>
                </property>
@@ -554,6 +554,13 @@
                 </spacer>
                </item>
                <item>
+                <widget class="QPushButton" name="printReportButton">
+                 <property name="text">
+                  <string>Print Report as PDF</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QPushButton" name="downloadReportButton">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -565,7 +572,7 @@
                   <enum>Qt::LeftToRight</enum>
                  </property>
                  <property name="text">
-                  <string>Download Report</string>
+                  <string>Download Report as PDF</string>
                  </property>
                 </widget>
                </item>

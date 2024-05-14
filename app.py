@@ -1,23 +1,29 @@
-from PySide6.QtCore import (QDate, QObject, Qt)
-from PySide6.QtGui import (QImage, QPixmap)
-from PySide6.QtWidgets import (QMainWindow, QDialog, QMessageBox, QFileDialog)
-
+#PySide6 libraries
+from PySide6.QtCore import Qt, QDate, QObject, Signal, QThread
+from PySide6.QtGui import QImage, QPixmap, QPainter
 from PySide6 import QtWidgets
+from PySide6.QtWidgets import QMainWindow, QDialog, QMessageBox, QFileDialog
+from PySide6.QtPrintSupport import QPrinter, QPrintPreviewDialog
+from PySide6.QtPdf import QPdfDocument
 
-from PySide6.QtCore import Signal, QThread
-from ultralytics import YOLO
+#other core libraries
 import os, sys, datetime, time, cv2
+from ultralytics import YOLO
 
-from ui import Ui_MainWindow, Ui_settingsDialog, Ui_setAlertDialog
-from database import Database
-
+#Matplotlib libraries
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from  matplotlib import rcParams
+from matplotlib import rcParams
 
-from openpyxl import Workbook
-from openpyxl.drawing.image import Image
-from openpyxl.styles import Font
+#Reportlab libraries
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle
+
+#other classes
+from ui import Ui_MainWindow, Ui_settingsDialog, Ui_setAlertDialog
+from database import Database
 
 class VideoWorker(QObject):
     imageUpdated = Signal(QImage)
@@ -26,8 +32,9 @@ class VideoWorker(QObject):
     def __init__(self, capture, model_index, conf, iou, models, maxID, is_recording=False):
         super().__init__()
         self.capture = capture
-        # self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-        # self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        #sets the frame's resolution to 1920 by 1080
+        self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
         self.model_index = model_index
         self.conf = conf
@@ -206,7 +213,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.dailyRadioButton.toggled.connect(self.radioButtonToggled)
         self.hourlyRadioButton.toggled.connect(self.radioButtonToggled)
 
-        self.downloadReportButton.clicked.connect(self.exportToExcel)
+        self.downloadReportButton.clicked.connect(lambda: self.exportToPDF())
+
+        self.printReportButton.clicked.connect(self.printReport)
 
         self.runInference()
 
@@ -223,7 +232,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 cap.release()
             i += 1
             
-        available_cameras.append('rtsp://TAPOC200:TapoC200!@192.168.137.18:554/stream1')
+        available_cameras.append('rtsp://TAPOC200:TapoC200!@192.168.1.13:554/stream1')
         return available_cameras
 
     def getAvailableModels(self):
@@ -303,7 +312,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.totalObjectsDetectedNumber.setText(str(total_objects))
 
         # Check alerts and display alertDialogBox if necessary
-        with Database("selectAllAlerts") as database:
+        with Database("checkAlerts") as database:
             alerts = database.selectAllAlerts()
             for item_name, alert_amount in alerts:
                 if item_name == "All Classes":
@@ -368,18 +377,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def radioButtonToggled(self):
         if self.dailyRadioButton.isChecked():
-            self.toDateEdit.setVisible(True)
-            self.dateEditMinusLabel.setVisible(True)
             self.label_3.setText("Average Daily Detected Litter")
         elif self.hourlyRadioButton.isChecked():
-            self.toDateEdit.setVisible(False)
-            self.dateEditMinusLabel.setVisible(False)
             self.label_3.setText("Average Hourly Detected Litter")
 
     def clickedFilterButton(self):
         with Database("clickedFilterButton") as database:
             from_date = self.fromDateEdit.date().toString("MM-dd-yyyy")
-            to_date = self.toDateEdit.date().addDays(1).toString("MM-dd-yyyy") if self.dailyRadioButton.isChecked() else self.fromDateEdit.date().addDays(1).toString("MM-dd-yyyy")
+            to_date = self.toDateEdit.date().addDays(1).toString("MM-dd-yyyy")
 
             total_litter_count = database.count_rows_by_date_range(from_date, to_date)
             self.totalDetectedLitterLabel.setText(f"{total_litter_count}")
@@ -449,6 +454,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.pieChartGridLayout.itemAt(i).widget().setParent(None)
 
     def createLineChart(self, litter_data):
+        # Sort the data by hour if hourlyRadioButton is checked
+        if self.hourlyRadioButton.isChecked():
+            litter_data.sort(key=lambda x: datetime.datetime.strptime(x['hour'], "%I:%M%p"))
+
         # Process the data for the chart
         if self.dailyRadioButton.isChecked():
             x_values = [item['date'] for item in litter_data]
@@ -485,11 +494,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ax.set_ylabel('Detected Litter Count')
         ax.set_title(title)
 
+        # Rotate x-axis labels
+        ax.set_xticklabels(x_values, rotation=45)
+
         # Adjust font size based on figure size
         rcParams.update({'font.size': max(10, min(self.lineChartFigure.get_size_inches()))})
 
         # Adjust layout to fit the frame
         self.lineChartFigure.tight_layout()
+
+        # Adjust x-axis date labels to fit in the figure area
+        self.lineChartFigure.autofmt_xdate()
 
         # Create a canvas widget to embed the chart
         canvas = FigureCanvas(self.lineChartFigure)
@@ -579,10 +594,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pieChartGridLayout.addWidget(canvas)  # Assuming you want to place it at the top
         canvas.draw()  # Draw the chart on the canvas
 
-    def exportToExcel(self):
-        with Database("exportToExcel") as database:
+    def exportToPDF(self, file_path=None):
+        with Database("exportToPDF") as database:
             from_date = self.fromDateEdit.date().toString("MM-dd-yyyy")
-            to_date = self.toDateEdit.date().addDays(1).toString("MM-dd-yyyy") if self.dailyRadioButton.isChecked() else self.fromDateEdit.date().addDays(1).toString("MM-dd-yyyy")
+            to_date = self.toDateEdit.date().addDays(1).toString("MM-dd-yyyy")
+            to_dateActualDate = self.toDateEdit.date().toString("MM-dd-yyyy")
 
             total_litter_count = database.count_rows_by_date_range(from_date, to_date)
 
@@ -605,92 +621,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             count_per_class = database.count_class_names(from_date, to_date)
             percentage_per_class = database.get_class_percentages(from_date, to_date)
 
-            # Create a new workbook and select the active sheet
-            workbook = Workbook()
-            sheet = workbook.active
-
-            # Write the data to the sheet
-            bold_font = Font(bold=True)
-
-            sheet.cell(row=1, column=1, value="From Date").font = bold_font
-            sheet.cell(row=1, column=2, value=from_date)
-
-            if self.dailyRadioButton.isChecked():
-                sheet.cell(row=2, column=1, value="To Date").font = bold_font
-                sheet.cell(row=2, column=2, value=to_date)
-
-            sheet.cell(row=4, column=1, value="Total Detected Litter").font = bold_font
-            sheet.cell(row=5, column=1, value=total_litter_count)
-
-            if self.dailyRadioButton.isChecked():
-                sheet.cell(row=6, column=1, value="Average Daily Detected Litter").font = bold_font
-                sheet.cell(row=7, column=1, value=average_daily_litter_count)
-            else:
-                sheet.cell(row=6, column=1, value="Average Hourly Detected Litter").font = bold_font
-                sheet.cell(row=7, column=1, value=average_hourly_litter_count)
-
-            sheet.cell(row=8, column=1, value="Total Recyclable Litter (%)").font = bold_font
-            sheet.cell(row=9, column=1, value=f"{litter_data['recyclable_percentage']:.2f}%")
-            sheet.cell(row=10, column=1, value="Total Non-Recyclable Litter (%)").font = bold_font
-            sheet.cell(row=11, column=1, value=f"{litter_data['non_recyclable_percentage']:.2f}%")
-
-            sheet.cell(row=13, column=1, value="Recyclable Litter").font = bold_font
-            for i, item in enumerate(recyclable_summary, start=14):
-                sheet.cell(row=i, column=1, value=f"{item['className']} - {item['count']}")
-
-            sheet.cell(row=13, column=2, value="Non-Recyclable Litter").font = bold_font
-            for i, item in enumerate(non_recyclable_summary, start=14):
-                sheet.cell(row=i, column=2, value=f"{item['className']} - {item['count']}")
-
-            # Write the chart data to the sheet
-            detected_litter_row = 1
-            sheet.cell(row=detected_litter_row, column=7, value="Detected Litter per Day").font = bold_font
-            for i, item in enumerate(litter_data_per_day, start=detected_litter_row + 1):
-                sheet.cell(row=i, column=7, value=item['date'] if self.dailyRadioButton.isChecked() else item['hour'])
-                sheet.cell(row=i, column=8, value=item['count'])
-
-            count_per_class_row = detected_litter_row + len(litter_data_per_day) + 3
-            sheet.cell(row=count_per_class_row, column=7, value="Count per Class").font = bold_font
-            for i, item in enumerate(count_per_class, start=count_per_class_row + 1):
-                class_name = list(item.keys())[0]
-                count = list(item.values())[0]
-                sheet.cell(row=i, column=7, value=class_name)
-                sheet.cell(row=i, column=8, value=count)
-
-            percentage_per_class_row = count_per_class_row + len(count_per_class) + 3
-            sheet.cell(row=percentage_per_class_row, column=7, value="Percentage per Class").font = bold_font
-            for i, item in enumerate(percentage_per_class, start=percentage_per_class_row + 1):
-                class_name = list(item.keys())[0]
-                percentage = list(item.values())[0]
-                sheet.cell(row=i, column=7, value=class_name)
-                sheet.cell(row=i, column=8, value=percentage)
-
-            # Adjust column widths to fit the contents
-            for column_cells in sheet.columns:
-                length = max(len(str(cell.value)) for cell in column_cells)
-                sheet.column_dimensions[column_cells[0].column_letter].width = length + 2
-
-            # Save the line chart as an image
-            line_chart_path = "line_chart.png"
-            if hasattr(self, 'lineChartFigure'):
-                self.lineChartFigure.savefig(line_chart_path)
-                line_chart_img = Image(line_chart_path)
-                sheet.add_image(line_chart_img, "J2")
-
-            # Save the bar chart as an image
-            bar_chart_path = "bar_chart.png"
-            if hasattr(self, 'barChartFigure'):
-                self.barChartFigure.savefig(bar_chart_path)
-                bar_chart_img = Image(bar_chart_path)
-                sheet.add_image(bar_chart_img, "J" + str(count_per_class_row))
-
-            # Save the pie chart as an image
-            pie_chart_path = "pie_chart.png"
-            if hasattr(self, 'pieChartFigure'):
-                self.pieChartFigure.savefig(pie_chart_path)
-                pie_chart_img = Image(pie_chart_path)
-                sheet.add_image(pie_chart_img, "J" + str(percentage_per_class_row))
-
             # Create the "reports" folder if it doesn't exist
             reports_folder = "reports"
             if not os.path.exists(reports_folder):
@@ -698,27 +628,193 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             # Generate a default file name based on the date range
             if self.dailyRadioButton.isChecked():
-                default_file_name = f"litter_report_{from_date}_to_{to_date}.xlsx"
+                default_file_name = f"LitterEye_DAILY_Report_{from_date}_to_{to_dateActualDate}.pdf"
             else:
-                default_file_name = f"litter_report_{from_date}.xlsx"
+                default_file_name = f"LitterEye_HOURLY_Report_{from_date}_to_{to_dateActualDate}.pdf"
             default_file_path = os.path.join(reports_folder, default_file_name)
 
-            # Save the workbook to a file
-            file_path, _ = QFileDialog.getSaveFileName(self, "Save Excel File", default_file_path, "Excel Files (*.xlsx)")
-            if file_path:
-                workbook.save(file_path)
-                QMessageBox.information(self, "Export Successful", "Data exported to Excel successfully.")
-            else:
-                QMessageBox.warning(self, "Export Cancelled", "Export to Excel cancelled.")
+            # If file_path is not provided, show the Save File dialog
+            if file_path is None:
+                file_path, _ = QFileDialog.getSaveFileName(self, "Save PDF File", default_file_path, "PDF Files (*.pdf)")
 
-            # Delete the temporary chart image files
-            if os.path.exists(line_chart_path):
-                os.remove(line_chart_path)
-            if os.path.exists(bar_chart_path):
-                os.remove(bar_chart_path)
-            if os.path.exists(pie_chart_path):
-                os.remove(pie_chart_path)
-                   
+            if file_path:
+                # Create a new PDF file
+                c = canvas.Canvas(file_path, pagesize=letter)
+
+                # Set the font and font size
+                c.setFont("Helvetica", 12)
+
+                # Write the report title
+                c.setFont("Helvetica-Bold", 16)
+                c.drawCentredString(300, 750, "LitterEye Report")
+
+                # Write the date range
+                c.setFont("Helvetica", 12)
+                c.drawCentredString(300, 720, f"{from_date} - {to_dateActualDate}")
+
+                # Add one space below
+                c.drawString(50, 695, "")
+
+                # Write the total detected litter count
+                c.setFont("Helvetica-Bold", 12)
+                c.drawString(50, 670, "Total Detected Litter:")
+                c.setFont("Helvetica", 12)
+                c.drawString(250, 670, str(total_litter_count))
+
+                # Write the average daily or hourly detected litter count
+                c.setFont("Helvetica-Bold", 12)
+                if self.dailyRadioButton.isChecked():
+                    c.drawString(50, 645, "Average Daily Detected Litter:")
+                    c.setFont("Helvetica", 12)
+                    c.drawString(250, 645, f"{average_daily_litter_count:.2f}")
+                else:
+                    c.drawString(50, 645, "Average Hourly Detected Litter:")
+                    c.setFont("Helvetica", 12)
+                    c.drawString(250, 645, f"{average_hourly_litter_count:.2f}")
+
+                # Write the recyclable and non-recyclable percentages
+                c.setFont("Helvetica-Bold", 12)
+                c.drawString(50, 620, "Total Recyclable Litter (%):")
+                c.setFont("Helvetica", 12)
+                c.drawString(250, 620, f"{litter_data['recyclable_percentage']:.2f}%")
+
+                c.setFont("Helvetica-Bold", 12)
+                c.drawString(50, 595, "Total Non-Recyclable Litter (%):")
+                c.setFont("Helvetica", 12)
+                c.drawString(250, 595, f"{litter_data['non_recyclable_percentage']:.2f}%")
+
+                # Write the recyclable and non-recyclable summaries in a table
+                data = [
+                    ["Recyclable Litter", "Non-Recyclable Litter"],
+                    [
+                        "\n".join([f"{item['className']} - {item['count']}" for item in recyclable_summary]),
+                        "\n".join([f"{item['className']} - {item['count']}" for item in non_recyclable_summary])
+                    ]
+                ]
+
+                table = Table(data)
+                table.setStyle(TableStyle([
+                    #first row
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.white),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 18),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    #second row
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                    ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+                    ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
+                    ('VALIGN', (0, 1), (-1, -1), 'TOP'),  # Align the contents to the top
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 12),
+                    ('TOPPADDING', (0, 1), (-1, -1), 6),
+                    ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+
+                # Get the width of the page
+                page_width = letter[0]
+
+                # Set the left and right margins
+                left_margin = 50
+                right_margin = 50
+
+                # Calculate the width of the table
+                table_width = page_width - left_margin - right_margin
+
+                # Set the width of the table
+                table._argW[0] = table_width / 2
+                table._argW[1] = table_width / 2
+
+                # Center the table
+                table.wrapOn(c, page_width, 100)
+                table.drawOn(c, left_margin, 400)
+
+                # Save and close the PDF file
+                c.showPage()
+
+                # Get the height of the page
+                page_height = letter[1]
+
+                # Set the top and bottom margins
+                top_margin = 50
+                bottom_margin = 50
+
+                # Calculate the height of each chart
+                chart_height = (page_height - top_margin - bottom_margin) / 3
+
+                # Save the line chart as an image
+                line_chart_path = "line_chart.png"
+                if hasattr(self, 'lineChartFigure'):
+                    self.lineChartFigure.savefig(line_chart_path)
+                    c.drawImage(line_chart_path, 50, page_height - top_margin - chart_height, width=500, height=chart_height)
+
+                # Save the bar chart as an image
+                bar_chart_path = "bar_chart.png"
+                if hasattr(self, 'barChartFigure'):
+                    self.barChartFigure.savefig(bar_chart_path)
+                    c.drawImage(bar_chart_path, 50, page_height - top_margin - 2 * chart_height, width=500, height=chart_height)
+
+                # Save the pie chart as an image
+                pie_chart_path = "pie_chart.png"
+                if hasattr(self, 'pieChartFigure'):
+                    self.pieChartFigure.savefig(pie_chart_path)
+                    c.drawImage(pie_chart_path, 50, page_height - top_margin - 3 * chart_height, width=500, height=chart_height)
+
+                # Save and close the PDF file
+                c.showPage()
+                c.save()
+
+                # Delete the temporary chart image files
+                if os.path.exists(line_chart_path):
+                    os.remove(line_chart_path)
+                if os.path.exists(bar_chart_path):
+                    os.remove(bar_chart_path)
+                if os.path.exists(pie_chart_path):
+                    os.remove(pie_chart_path)
+
+                
+                if file_path is not None and not (file_path.endswith('temp_report.pdf')):
+                    QMessageBox.information(self, "Export Successful", "Data exported to PDF successfully.")
+            else:
+                QMessageBox.warning(self, "Export Cancelled", "Export to PDF cancelled.")
+
+    def printReport(self):
+        # Temporarily save the PDF file
+        temp_pdf_path = "temp_report.pdf"
+        self.exportToPDF(file_path=temp_pdf_path)  # Pass file_path to exportToPDF
+
+        # Open the PDF file with a print preview dialog
+        printer = QPrinter()
+        preview_dialog = QPrintPreviewDialog(printer, self)
+        preview_dialog.paintRequested.connect(lambda: self.printDocument(printer, temp_pdf_path))
+        preview_dialog.exec_()
+
+        # Remove the temporary PDF file
+        os.remove(temp_pdf_path)
+
+    def printDocument(self, printer, pdf_file_path):
+        # Load the PDF document
+        document = QPdfDocument()
+        document.load(pdf_file_path)
+
+        # Print the document
+        if document.pageCount() > 0:
+            painter = QPainter(printer)
+            # Get the page size in device pixels
+            page_size = printer.pageRect(QPrinter.DevicePixel).size().toSize()
+            for i in range(document.pageCount()):
+                # Render each page into a QImage
+                image = document.render(i, page_size)
+                # Paint the QImage onto the QPainter
+                painter.drawImage(0, 0, image)
+                # Move to the next page if not the last page
+                if i < document.pageCount() - 1:
+                    printer.newPage()
+            painter.end()
+
     def alertDialogBox(self, className, alertAmount):
         if not self.alert_dialog_shown:
             self.alert_dialog_shown = True
@@ -727,10 +823,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             dlg.setText(f"{className} has reached the amount of {alertAmount}!")
             dlg.setStandardButtons(QMessageBox.Close)
             dlg.setIcon(QMessageBox.Warning)
-            dlg.buttonClicked.connect(self.resetAlertDialogFlag)
+            dlg.buttonClicked.connect(lambda: self.removeAlertAndResetFlag(className))  # Add this line
             dlg.exec()
 
-    def resetAlertDialogFlag(self):
+    def removeAlertAndResetFlag(self, className):
+        with Database("removeAlert") as database:
+            database.removeAlert(className)
+
         self.alert_dialog_shown = False
 
     def handle_error(self, message):
@@ -798,7 +897,7 @@ class setAlertDialog(Ui_setAlertDialog, QDialog):
         self.names = names if names is not None else {}
 
         # Populate the comboBox with the values from the names dictionary
-        with Database("selectAllAlerts") as database:
+        with Database("populateComboBox") as database:
             alerts = database.selectAllAlerts()
             existing_items = set(item_name for item_name, _ in alerts)
 
@@ -819,11 +918,11 @@ class setAlertDialog(Ui_setAlertDialog, QDialog):
             database.insertAlert(item_name, int(amount))
 
     def remove_from_database(self, item_name):
-        with Database("removeAlert") as database:
+        with Database("removeAlert2") as database:
             database.removeAlert(item_name)
 
     def populate_rows_from_database(self):
-        with Database("selectAllAlerts") as database:
+        with Database("populateRows") as database:
             alerts = database.selectAllAlerts()
             for item_name, amount in alerts:
                 self.add_row(item_name, amount)

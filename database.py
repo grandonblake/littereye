@@ -44,14 +44,6 @@ class Database():
             )
             """
         )
-
-    def dropTable(self):
-        createTableQuery = QSqlQuery(self.db)
-        createTableQuery.exec(
-            """
-            DROP TABLE alerts
-            """
-        )
     
     def insertObject(self, objectID, className, confidenceLevel, recyclableBool, dateTime):
         query = QSqlQuery(self.db)
@@ -243,11 +235,12 @@ class Database():
         return litter_summary 
 
     def detected_litter_per_day(self, from_date, to_date, hourly=False):
-        print("2")
         if hourly:
-            group_by = "substr(dateTime, 12, 2)"
+            group_by = "substr(dateTime, 1, 10), substr(dateTime, 12, 2)"
+            counts = {f"{hour:02d}:00{'am' if hour < 12 else 'pm'}": 0 for hour in range(24)}
         else:
             group_by = "substr(dateTime, 1, 10)"
+            counts = {}
 
         query = QSqlQuery(self.db)
         query.prepare(
@@ -264,9 +257,6 @@ class Database():
         query.bindValue(":to_date", to_date)
         query.exec()
 
-        print("3")
-
-        result = []
         while query.next():
             date_time = query.value(0)
             count = query.value(1)
@@ -276,14 +266,13 @@ class Database():
                 hour = hour % 12
                 if hour == 0:
                     hour = 12
-                result.append({'hour': f"{hour}:00{am_pm}", 'count': str(count)})
+                counts[f"{hour}:00{am_pm}"] = str(count)
             else:
                 date = date_time.split(" ")[0]  # Extract the date part from the dateTime string
                 date = "-".join(date.split("-")[:2])  # Omit the year
-                result.append({'date': date, 'count': str(count)})
+                counts[date] = str(count)
 
-        print("4")
-
+        result = [{'hour' if hourly else 'date': key, 'count': value} for key, value in counts.items() if int(value) > 0]
         return result
 
     def count_class_names(self, from_date, to_date):
@@ -307,9 +296,6 @@ class Database():
             class_name = query.value(0)
             count = query.value(1)
             result.append({class_name: str(count)})
-
-        print("count_class_names")
-        print(result)
 
         return result
     
@@ -338,9 +324,6 @@ class Database():
             # Calculate the percentage and round it to 2 decimal places
             percentage = round((count / total_count) * 100, 2)
             result.append({class_name: str(percentage) + '%'})
-
-        print("get_class_percentages")
-        print(result)
 
         return result
 

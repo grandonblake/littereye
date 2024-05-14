@@ -327,6 +327,11 @@ class Ui_MainWindow(object):
 
         self.topFrameRightLayout.addItem(self.horizontalSpacer)
 
+        self.printReportButton = QPushButton(self.topFrame)
+        self.printReportButton.setObjectName(u"printReportButton")
+
+        self.topFrameRightLayout.addWidget(self.printReportButton)
+
         self.downloadReportButton = QPushButton(self.topFrame)
         self.downloadReportButton.setObjectName(u"downloadReportButton")
         sizePolicy.setHeightForWidth(self.downloadReportButton.sizePolicy().hasHeightForWidth())
@@ -609,7 +614,8 @@ class Ui_MainWindow(object):
         self.hourlyRadioButton.setText(QCoreApplication.translate("MainWindow", u"Hourly", None))
         self.dateEditMinusLabel.setText(QCoreApplication.translate("MainWindow", u"-", None))
         self.filterButton.setText(QCoreApplication.translate("MainWindow", u"Filter", None))
-        self.downloadReportButton.setText(QCoreApplication.translate("MainWindow", u"Download Report", None))
+        self.printReportButton.setText(QCoreApplication.translate("MainWindow", u"Print Report as PDF", None))
+        self.downloadReportButton.setText(QCoreApplication.translate("MainWindow", u"Download Report as PDF", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Total Detected Litter", None))
         self.totalDetectedLitterLabel.setText(QCoreApplication.translate("MainWindow", u"0", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"Average Daily Detected Litter", None))
@@ -816,7 +822,7 @@ class Ui_settingsDialog(object):
 class Ui_setAlertDialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():
-            Dialog.setObjectName(u"Set Alert")
+            Dialog.setObjectName(u"Dialog")
         Dialog.resize(250, 250)
         Dialog.setMinimumSize(QSize(0, 0))
         Dialog.setMaximumSize(QSize(16777215, 16777215))
@@ -895,23 +901,25 @@ class Ui_setAlertDialog(object):
         self.verticalLayout.setStretch(0, 2)
         self.verticalLayout.setStretch(1, 8)
 
+        self.addButton.clicked.connect(lambda: self.add_row())
+
         self.retranslateUi(Dialog)
 
-        self.addButton.clicked.connect(self.add_row)
-
         QMetaObject.connectSlotsByName(Dialog)
+    # setupUi
 
     def retranslateUi(self, Dialog):
         Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Dialog", None))
         self.label.setText(QCoreApplication.translate("Dialog", u"Class", None))
         self.label_2.setText(QCoreApplication.translate("Dialog", u"Amount", None))
         self.addButton.setText(QCoreApplication.translate("Dialog", u"Add", None))
+    # retranslateUi
 
     def add_row(self, item_name=None, amount=None):
         if item_name is None:
             item_name = self.comboBox.currentText()
         if amount is None:
-            amount = self.lineEdit.text()     
+            amount = self.lineEdit.text()    
 
         if item_name and amount:
             new_horizontal_layout = QHBoxLayout()
@@ -938,7 +946,6 @@ class Ui_setAlertDialog(object):
             new_horizontal_layout.setStretch(1, 1)
             new_horizontal_layout.setStretch(2, 1)
 
-            print("UI.PY")
             self.save_to_database(item_name, amount)
 
             if item_name == self.comboBox.currentText(): # removes selected option in drop down list
