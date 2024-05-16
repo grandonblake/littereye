@@ -638,79 +638,81 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 file_path, _ = QFileDialog.getSaveFileName(self, "Save PDF File", default_file_path, "PDF Files (*.pdf)")
 
             if file_path:
-                # Create a new PDF file
                 c = canvas.Canvas(file_path, pagesize=letter)
 
                 # Set the font and font size
                 c.setFont("Helvetica", 12)
 
+                # Write the system name
+                c.setFont("Helvetica-Bold", 18)
+                c.drawCentredString(300, 750, "LitterEye")
+
                 # Write the report title
                 c.setFont("Helvetica-Bold", 16)
-                c.drawCentredString(300, 750, "LitterEye Report")
+                c.drawCentredString(300, 720, "Summary Report")
 
                 # Write the date range
                 c.setFont("Helvetica", 12)
-                c.drawCentredString(300, 720, f"{from_date} - {to_dateActualDate}")
+                c.drawCentredString(300, 690, f"from {from_date} to {to_dateActualDate}")
 
                 # Add one space below
-                c.drawString(50, 695, "")
+                c.drawString(50, 665, "")
 
                 # Write the total detected litter count
                 c.setFont("Helvetica-Bold", 12)
-                c.drawString(50, 670, "Total Detected Litter:")
+                c.drawString(50, 640, "Total Detected Litter:")
                 c.setFont("Helvetica", 12)
-                c.drawString(250, 670, str(total_litter_count))
+                c.drawString(250, 640, str(total_litter_count) + " objects")
 
                 # Write the average daily or hourly detected litter count
                 c.setFont("Helvetica-Bold", 12)
                 if self.dailyRadioButton.isChecked():
-                    c.drawString(50, 645, "Average Daily Detected Litter:")
+                    c.drawString(50, 615, "Average Daily Detected Litter:")
                     c.setFont("Helvetica", 12)
-                    c.drawString(250, 645, f"{average_daily_litter_count:.2f}")
+                    c.drawString(250, 615, f"{average_daily_litter_count:.2f} objects")
                 else:
-                    c.drawString(50, 645, "Average Hourly Detected Litter:")
+                    c.drawString(50, 615, "Average Hourly Detected Litter:")
                     c.setFont("Helvetica", 12)
-                    c.drawString(250, 645, f"{average_hourly_litter_count:.2f}")
+                    c.drawString(250, 615, f"{average_hourly_litter_count:.2f} objects")
 
                 # Write the recyclable and non-recyclable percentages
                 c.setFont("Helvetica-Bold", 12)
-                c.drawString(50, 620, "Total Recyclable Litter (%):")
+                c.drawString(50, 590, "Total Recyclable Litter (%):")
                 c.setFont("Helvetica", 12)
-                c.drawString(250, 620, f"{litter_data['recyclable_percentage']:.2f}%")
+                c.drawString(250, 590, f"{litter_data['recyclable_percentage']:.2f}%")
 
                 c.setFont("Helvetica-Bold", 12)
-                c.drawString(50, 595, "Total Non-Recyclable Litter (%):")
+                c.drawString(50, 565, "Total Non-Recyclable Litter (%):")
                 c.setFont("Helvetica", 12)
-                c.drawString(250, 595, f"{litter_data['non_recyclable_percentage']:.2f}%")
+                c.drawString(250, 565, f"{litter_data['non_recyclable_percentage']:.2f}%")
 
                 # Write the recyclable and non-recyclable summaries in a table
                 data = [
                     ["Recyclable Litter", "Non-Recyclable Litter"],
                     [
-                        "\n".join([f"{item['className']} - {item['count']}" for item in recyclable_summary]),
-                        "\n".join([f"{item['className']} - {item['count']}" for item in non_recyclable_summary])
+                        "\n".join([f"{item['className']} - {item['count']} objects" for item in recyclable_summary]),
+                        "\n".join([f"{item['className']} - {item['count']} objects" for item in non_recyclable_summary])
                     ]
                 ]
 
                 table = Table(data)
                 table.setStyle(TableStyle([
-                    #first row
+                    # first row
                     ('BACKGROUND', (0, 0), (-1, 0), colors.white),
                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                     ('FONTSIZE', (0, 0), (-1, 0), 18),
                     ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                    #second row
+                    # second row
                     ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                     ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
                     ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
-                    ('VALIGN', (0, 1), (-1, -1), 'TOP'),  # Align the contents to the top
+                    ('VALIGN', (0, 1), (-1, -1), 'TOP'),
                     ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
                     ('FONTSIZE', (0, 1), (-1, -1), 12),
                     ('TOPPADDING', (0, 1), (-1, -1), 6),
                     ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-
                     ('GRID', (0, 0), (-1, -1), 1, colors.black)
                 ]))
 
@@ -730,10 +732,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
                 # Center the table
                 table.wrapOn(c, page_width, 100)
-                table.drawOn(c, left_margin, 400)
-
-                # Save and close the PDF file
-                c.showPage()
+                table.drawOn(c, left_margin, 380)
 
                 # Get the height of the page
                 page_height = letter[1]
@@ -743,25 +742,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 bottom_margin = 50
 
                 # Calculate the height of each chart
-                chart_height = (page_height - top_margin - bottom_margin) / 3
+                chart_height = (page_height - top_margin - bottom_margin - 100) / 3
 
                 # Save the line chart as an image
                 line_chart_path = "line_chart.png"
                 if hasattr(self, 'lineChartFigure'):
                     self.lineChartFigure.savefig(line_chart_path)
-                    c.drawImage(line_chart_path, 50, page_height - top_margin - chart_height, width=500, height=chart_height)
+                    c.drawImage(line_chart_path, 50, 150, width=500, height=chart_height)
+
+                # Save and close the first page
+                c.showPage()
 
                 # Save the bar chart as an image
                 bar_chart_path = "bar_chart.png"
                 if hasattr(self, 'barChartFigure'):
                     self.barChartFigure.savefig(bar_chart_path)
-                    c.drawImage(bar_chart_path, 50, page_height - top_margin - 2 * chart_height, width=500, height=chart_height)
+                    c.drawImage(bar_chart_path, 50, page_height - top_margin - chart_height, width=500, height=chart_height)
 
                 # Save the pie chart as an image
                 pie_chart_path = "pie_chart.png"
                 if hasattr(self, 'pieChartFigure'):
                     self.pieChartFigure.savefig(pie_chart_path)
-                    c.drawImage(pie_chart_path, 50, page_height - top_margin - 3 * chart_height, width=500, height=chart_height)
+                    c.drawImage(pie_chart_path, 50, page_height - top_margin - 2 * chart_height - 50, width=500, height=chart_height)
 
                 # Save and close the PDF file
                 c.showPage()
@@ -775,7 +777,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if os.path.exists(pie_chart_path):
                     os.remove(pie_chart_path)
 
-                
                 if file_path is not None and not (file_path.endswith('temp_report.pdf')):
                     QMessageBox.information(self, "Export Successful", "Data exported to PDF successfully.")
             else:
