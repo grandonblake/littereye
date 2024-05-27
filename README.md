@@ -24,25 +24,25 @@ The study will focus on training a YOLOv8 model that will be able to detect stre
 This study centers on the exploration of the YOLOv8 model as an object detection system for street litter. The system would only be able to detect objects that are part of the dataset used to train the object detection model. It will only focus on the detection of street litter and will not address the physical collection or disposal of the detected litter. While the focus is on street litter, the technology could potentially be adapted to detect litter in other settings (e.g., parks, rivers) with further dataset development. Also, the initial images in the dataset are taken in the day which might make it difficult for detection in the night or in dark places. Additionally, the system cannot determine whether a specific object is considered a waste/litter or not. It also does not directly address the root causes of littering behavior or explore the broader social and environmental implications of waste management. Furthermore, there would only be one live video feed shown from a chosen camera at a time. The CCTV camera that the researchers utilized for this study is the TAPO C200. The summary report will only provide a summary of the detected litter, it will not provide recommendations or analysis of the litter.
 
 ## Conceptual Framework (IPO diagram)
-<img src="/screenshots/conceptualframework.png" width=25% height=25%>
+<img src="/screenshots/conceptualframework.png" width=75% height=75%>
 
 The conceptual framework details the input-process-output (IPO) diagram of the whole study. The input of the study begins by combining a dataset for training that is composed of the researcher’s captured litter images and the TACO dataset. Afterwards, the process of the study involves steps that are necessary to prepare the data for training the model. This includes data annotation, data preprocessing, and data augmentation. Then, the process of training the YOLOv8 model can be done on the augmented combined dataset. The output of the study involves steps needed to be done after training the model, this includes evaluating the model and getting it ready to detect street litter in real-time. The model needs to be evaluated via the mean Average Precision (mAP), precision, recall, F1 score, confusion matrix, and learning curve. These metrics determine how the model performed against the validation set and how the model will perform on new and unseen images. Additionally, it will help decide whether the model needs further training, if the hyperparameters of training the model needs to be altered, or if the dataset on training the model needs to be increased or improved. Then, after evaluating the model, it can now be deployed to detect litters on the street using real-time video footage and the result will be saved in the database and outputted in the screen of the system. If a litter’s threshold is exceeded, it will then send a notification on the screen of the system.
 
 ## System Architecture
-<img src="/screenshots/systemarchitecture.png" width=25% height=25%>
+<img src="/screenshots/systemarchitecture.png" width=75% height=75%>
 
 The system architecture is structured into three key tiers: Presentation, Logic, and Data. In the Presentation tier, a camera will capture real-time footage of unknown detected objects and pass it to the system for identification. It will then transition to the Logic tier, on which the unknown detected object will be identified by the YOLOv8 model through its backbone, neck, and head. Afterwards, the amount and the class of the detected object will be determined which will be known as the results. Then, the results, which is the amount and the type of the detected object, will be saved to the database in the Data tier. Simultaneously, the results of the detected object will also be displayed on the screen of the system in the Presentation tier.
 
 ## Street Litter that can be detected
-<img src="/screenshots/streetlitterdetected.jpg" width=25% height=25%>
+<img src="/screenshots/streetlitterdetected.jpg" width=50% height=50%>
 
 ## System screenshots
-<img src="/screenshots/detecttab.jpg" width=25% height=25%>
-<img src="/screenshots/camerasettings.jpg" width=25% height=25%>
-<img src="/screenshots/setalert.jpg" width=25% height=25%>
+<img src="/screenshots/detecttab.jpg" width=75% height=75%>
+<img src="/screenshots/camerasettings.jpg" width=50% height=50%>
+<img src="/screenshots/setalert.jpg" width=50% height=50%>
 <img src="/screenshots/advancedsettings.jpg" width=25% height=25%>
-<img src="/screenshots/summaryreport.jpg" width=25% height=25%>
-<img src="/screenshots/printpreview.jpg" width=25% height=25%>
+<img src="/screenshots/summaryreport.jpg" width=75% height=75%>
+<img src="/screenshots/printpreview.jpg" width=75% height=75%>
 
 
 
