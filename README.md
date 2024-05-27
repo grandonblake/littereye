@@ -1,7 +1,7 @@
 # littereye
 LitterEye: Automated and Real-Time Litter Detection System using YOLOv8
 
-It is an automated and real-time litter detection system using the YOLOv8m model. The system is made with PySide6 and can be connected to a CCTV camera using OpenCV.
+It is an automated and real-time litter detection system using the YOLOv8m model. The YOLOv8 was utilized using the Ultralytics library. The dataset is preprocessed and augmented using Roboflow. The system is made with PySide6 and can be connected to a CCTV camera using OpenCV. The detected objects are then saved to the database in SQLite.
 
 This project was a group effort that was submitted on May 21, 2024 as our Thesis during my 4th year in College.
 
